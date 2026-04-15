@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Background -->
+  <rect width="512" height="512" rx="96" fill="#2A5C45"/>
+  <!-- Calendar body -->
+  <rect x="108" y="156" width="296" height="248" rx="20" fill="none" stroke="rgba(255,255,255,0.9)" stroke-width="22"/>
+  <!-- Calendar top hooks -->
+  <line x1="180" y1="116" x2="180" y2="196" stroke="rgba(255,255,255,0.9)" stroke-width="22" stroke-linecap="round"/>
+  <line x1="332" y1="116" x2="332" y2="196" stroke="rgba(255,255,255,0.9)" stroke-width="22" stroke-linecap="round"/>
+  <!-- Header band inside calendar -->
+  <rect x="108" y="156" width="296" height="72" rx="20" fill="rgba(255,255,255,0.18)"/>
+  <!-- Checkmark -->
+  <polyline points="172,278 228,338 344,206" fill="none" stroke="rgba(255,255,255,0.95)" stroke-width="28" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

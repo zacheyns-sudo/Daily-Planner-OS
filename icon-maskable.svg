@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Full bleed background (maskable icons must fill the entire canvas) -->
+  <rect width="512" height="512" fill="#2A5C45"/>
+  <!-- Calendar body — shifted inward for maskable safe zone -->
+  <rect x="130" y="172" width="252" height="210" rx="18" fill="none" stroke="rgba(255,255,255,0.9)" stroke-width="20"/>
+  <!-- Calendar top hooks -->
+  <line x1="194" y1="138" x2="194" y2="206" stroke="rgba(255,255,255,0.9)" stroke-width="20" stroke-linecap="round"/>
+  <line x1="318" y1="138" x2="318" y2="206" stroke="rgba(255,255,255,0.9)" stroke-width="20" stroke-linecap="round"/>
+  <!-- Header band -->
+  <rect x="130" y="172" width="252" height="62" rx="18" fill="rgba(255,255,255,0.18)"/>
+  <!-- Checkmark -->
+  <polyline points="186,286 236,340 342,218" fill="none" stroke="rgba(255,255,255,0.95)" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

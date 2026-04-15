@@ -1,0 +1,1566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Daily OS</title>
+<link rel="icon" href="./icon.svg">
+<link rel="manifest" href="./manifest.json">
+<meta name="theme-color" content="#2A5C45">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Daily OS">
+<link rel="apple-touch-icon" href="./icon.svg">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:        #F5F4F0;
+  --card:      #FFFFFF;
+  --border:    #E8E6DF;
+  --text:      #1A1A18;
+  --muted:     #78776F;
+  --accent:    #2A5C45;
+  --accent-bg: #EBF4EF;
+  --red:       #B83232;
+  --red-bg:    #FDECEC;
+  --amber:     #C47B0A;
+  --amber-bg:  #FEF3E0;
+  --purple:    #6B48C8;
+  --purple-bg: #F0ECFB;
+  --blue:      #2563EB;
+  --teal:      #0D9488;
+  --exam:      #C2410C;
+  --radius:    14px;
+  --shadow:    0 1px 2px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.05);
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Header ── */
+header {
+  background: var(--card);
+  border-bottom: 1px solid var(--border);
+  padding: 14px 20px 0;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+.header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 0;
+  margin-bottom: 10px;
+}
+header h1 { font-size: 16px; font-weight: 600; letter-spacing: -0.2px; }
+.sub { font-size: 12px; color: var(--muted); margin-top: 1px; }
+
+.tab-bar {
+  display: flex;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  border-top: 1px solid var(--border);
+}
+.tab-bar::-webkit-scrollbar { display: none; }
+.tab-btn {
+  padding: 10px 16px;
+  border: none;
+  border-bottom: 2px solid transparent;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  background: transparent;
+  color: var(--muted);
+  font-family: inherit;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: all 0.12s;
+}
+.tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+/* ── Layout ── */
+main { max-width: 640px; margin: 0 auto; padding: 20px 16px 60px; }
+
+/* ── Cards ── */
+.card {
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  margin-bottom: 14px;
+}
+
+/* ── Forms ── */
+label { display: block; font-size: 12px; font-weight: 500; color: var(--muted); margin-bottom: 5px; }
+input[type="text"], input[type="date"], select {
+  width: 100%; padding: 9px 12px;
+  border: 1px solid var(--border); border-radius: 9px;
+  font-size: 14px; font-family: inherit; color: var(--text);
+  background: var(--bg); outline: none; transition: border-color 0.12s;
+}
+input:focus, select:focus { border-color: var(--accent); }
+.form-group { margin-bottom: 12px; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+/* ── Buttons ── */
+button { font-family: inherit; cursor: pointer; border: none; transition: all 0.12s; }
+.btn-primary { background: var(--accent); color: white; padding: 9px 18px; border-radius: 9px; font-size: 14px; font-weight: 500; }
+.btn-primary:hover { opacity: 0.88; }
+.btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--border); padding: 8px 14px; border-radius: 9px; font-size: 13px; font-weight: 500; }
+.btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+.btn-remove { background: transparent; color: var(--muted); padding: 4px 8px; border-radius: 6px; font-size: 14px; line-height: 1; flex-shrink: 0; }
+.btn-remove:hover { background: var(--red-bg); color: var(--red); }
+
+/* ── Section head ── */
+.section-head { font-size: 11px; font-weight: 600; letter-spacing: 0.7px; text-transform: uppercase; color: var(--muted); margin-bottom: 12px; }
+
+/* ── Badges ── */
+.badge { font-size: 12px; font-weight: 500; padding: 3px 10px; border-radius: 20px; }
+.b-green  { background: var(--accent-bg); color: var(--accent); }
+.b-amber  { background: var(--amber-bg);  color: var(--amber);  }
+.b-red    { background: var(--red-bg);    color: var(--red);    }
+.b-grey   { background: var(--bg);        color: var(--muted);  border: 1px solid var(--border); }
+.b-purple { background: var(--purple-bg); color: var(--purple); }
+.b-exam   { background: #FEF0E8;         color: var(--exam);   }
+
+/* ── Focus card ── */
+.label-row { font-size: 11px; font-weight: 600; letter-spacing: 0.8px; text-transform: uppercase; color: var(--accent); margin-bottom: 14px; }
+.label-row.fl { color: var(--purple); }
+.focus-task { font-size: 21px; font-weight: 700; line-height: 1.3; letter-spacing: -0.3px; margin-bottom: 10px; }
+.focus-badges { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+.focus-reason { font-size: 15px; color: var(--muted); line-height: 1.65; margin-bottom: 18px; }
+.focus-actions { display: flex; gap: 8px; }
+
+/* ── Loading ── */
+.loading-wrap { text-align: center; padding: 40px 20px; }
+.spinner { width: 26px; height: 26px; border: 2.5px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.75s linear infinite; margin: 0 auto 14px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-text { font-size: 14px; color: var(--muted); }
+
+/* ── Schedule list ── */
+.sched-item { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--border); }
+.sched-item:last-child { border-bottom: none; }
+.sched-time { font-size: 12px; color: var(--muted); min-width: 88px; font-variant-numeric: tabular-nums; }
+.sched-name { font-size: 14px; }
+.sched-note { font-size: 12px; color: var(--muted); padding-top: 10px; }
+
+/* ── Deadline items ── */
+.dl-item { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 11px 0; border-bottom: 1px solid var(--border); }
+.dl-item:last-child { border-bottom: none; }
+.dl-name { font-size: 14px; font-weight: 500; }
+.dl-sub  { font-size: 12px; color: var(--muted); margin-top: 1px; }
+.dl-days { font-size: 12px; font-weight: 600; padding: 3px 10px; border-radius: 12px; white-space: nowrap; }
+
+/* ── Calendar ── */
+.cal-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.cal-month-label { font-size: 16px; font-weight: 600; }
+.cal-nav-btn { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 4px 12px; font-size: 18px; color: var(--muted); cursor: pointer; line-height: 1.3; }
+.cal-nav-btn:hover { border-color: var(--accent); color: var(--accent); }
+.cal-weekdays { display: grid; grid-template-columns: repeat(7, 1fr); margin-bottom: 2px; }
+.cal-wd { text-align: center; font-size: 11px; font-weight: 600; letter-spacing: 0.5px; color: var(--muted); padding: 4px 0; }
+.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; }
+.cal-cell { display: flex; flex-direction: column; align-items: center; padding: 5px 2px 4px; border-radius: 8px; cursor: pointer; min-height: 50px; transition: background 0.1s; }
+.cal-cell:hover:not(.other-month) { background: var(--bg); }
+.cal-cell.other-month { opacity: 0.25; pointer-events: none; }
+.cal-cell.is-today .cal-num { background: var(--accent); color: white; border-radius: 50%; }
+.cal-cell.is-selected:not(.is-today) { background: var(--accent-bg); border-radius: 8px; }
+.cal-num { font-size: 13px; font-weight: 500; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; }
+.cal-dots { display: flex; gap: 2px; margin-top: 3px; flex-wrap: wrap; justify-content: center; max-width: 26px; }
+.cal-dot { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
+.dot-class  { background: var(--blue); }
+.dot-sport  { background: var(--teal); }
+.dot-urgent { background: var(--red); }
+.dot-soon   { background: var(--amber); }
+.dot-ok     { background: var(--accent); }
+.dot-fl     { background: var(--purple); }
+.dot-exam   { background: var(--exam);   }
+
+/* Calendar day detail */
+.cal-detail { margin-top: 16px; border-top: 1px solid var(--border); padding-top: 16px; animation: slideIn 0.2s ease; }
+.cal-detail-date { font-size: 15px; font-weight: 600; margin-bottom: 12px; }
+.cal-detail-section { margin-bottom: 10px; }
+.cal-detail-label { font-size: 11px; font-weight: 600; letter-spacing: 0.6px; text-transform: uppercase; color: var(--muted); margin-bottom: 5px; }
+.cal-detail-row { font-size: 13px; padding: 3px 0; }
+
+/* Calendar legend */
+.cal-legend { display: flex; gap: 14px; flex-wrap: wrap; }
+.cal-legend-item { font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 5px; }
+
+/* ── Tasks tab ── */
+.task-item { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; padding: 11px 0; border-bottom: 1px solid var(--border); }
+.task-item:last-child { border-bottom: none; }
+.task-title { font-size: 14px; font-weight: 500; }
+.task-meta  { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.task-right { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+
+/* ── Labs tab ── */
+.phase-card {
+  background: linear-gradient(135deg, var(--purple-bg) 0%, #FDFCFF 100%);
+  border: 1px solid #DDD5F5;
+  border-radius: var(--radius);
+  padding: 20px;
+  margin-bottom: 14px;
+}
+.phase-tag { display: inline-block; font-size: 11px; font-weight: 600; letter-spacing: 0.8px; text-transform: uppercase; color: var(--purple); background: white; border: 1px solid #DDD5F5; border-radius: 12px; padding: 3px 10px; margin-bottom: 10px; }
+.phase-title { font-size: 18px; font-weight: 700; letter-spacing: -0.2px; margin-bottom: 6px; }
+.phase-goal { font-size: 14px; color: var(--muted); line-height: 1.55; margin-bottom: 16px; }
+.phase-stats { display: flex; gap: 20px; }
+.phase-stat { text-align: center; }
+.phase-stat-num { font-size: 22px; font-weight: 700; color: var(--purple); line-height: 1; }
+.phase-stat-lbl { font-size: 11px; color: var(--muted); margin-top: 3px; }
+.product-counter { display: flex; align-items: center; gap: 10px; margin-top: 14px; padding-top: 14px; border-top: 1px solid #DDD5F5; }
+.product-counter-label { font-size: 13px; color: var(--muted); flex: 1; }
+.counter-btn { width: 28px; height: 28px; border-radius: 50%; border: 1px solid #DDD5F5; background: white; font-size: 18px; line-height: 1; display: flex; align-items: center; justify-content: center; color: var(--purple); cursor: pointer; flex-shrink: 0; }
+.counter-btn:hover { background: var(--purple-bg); }
+.counter-num { font-size: 20px; font-weight: 700; color: var(--purple); min-width: 28px; text-align: center; }
+
+/* FL list items */
+.fl-item { display: flex; align-items: flex-start; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+.fl-item:last-child { border-bottom: none; }
+.fl-check { width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; cursor: pointer; transition: all 0.12s; background: white; }
+.fl-check:hover { border-color: var(--purple); }
+.fl-check.done { border-color: var(--purple); background: var(--purple); color: white; font-size: 10px; font-weight: 700; }
+.fl-check.done::after { content: '✓'; }
+.fl-info { flex: 1; min-width: 0; }
+.fl-title { font-size: 14px; font-weight: 500; }
+.fl-title.done { text-decoration: line-through; color: var(--muted); font-weight: 400; }
+.fl-meta { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+/* Log entries */
+.log-item { display: flex; align-items: flex-start; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+.log-item:last-child { border-bottom: none; }
+.log-date { font-size: 12px; color: var(--muted); min-width: 48px; margin-top: 1px; flex-shrink: 0; }
+.log-entry { font-size: 14px; flex: 1; line-height: 1.45; }
+
+/* ── API setup ── */
+.setup-note { font-size: 13px; color: var(--muted); margin-bottom: 12px; line-height: 1.5; }
+.key-note { font-size: 12px; color: var(--muted); margin-top: 8px; }
+
+/* ── Utility ── */
+.empty { font-size: 14px; color: var(--muted); padding: 16px 0; text-align: center; }
+.slide-in { animation: slideIn 0.25s ease; }
+@keyframes slideIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:none; } }
+
+/* ── Sticky note ── */
+.sticky-note {
+  position: fixed;
+  bottom: 28px;
+  right: 28px;
+  width: 210px;
+  background: #FEFCE8;
+  border-radius: 2px 14px 2px 2px;
+  box-shadow: 3px 4px 12px rgba(0,0,0,0.13), 0 1px 3px rgba(0,0,0,0.07);
+  transform: rotate(0.7deg);
+  z-index: 15;
+  transition: box-shadow 0.15s;
+}
+.sticky-note:hover { box-shadow: 4px 6px 18px rgba(0,0,0,0.18), 0 1px 3px rgba(0,0,0,0.07); }
+.sticky-header {
+  padding: 9px 12px 7px;
+  border-bottom: 1px dashed rgba(180,130,0,0.25);
+}
+.sticky-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: #92400E;
+}
+.sticky-body { padding: 8px 12px 10px; }
+.sticky-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  padding: 3px 0;
+}
+.sticky-cb {
+  width: 14px; height: 14px; border-radius: 3px;
+  border: 1.5px solid #D97706; background: transparent;
+  flex-shrink: 0; cursor: pointer; margin-top: 2px;
+  transition: all 0.12s;
+}
+.sticky-cb:hover { border-color: #92400E; background: #FEF3C7; }
+.sticky-cb.ticked { background: #D97706; border-color: #D97706; }
+.sticky-cb.ticked::after { content: '✓'; display: block; font-size: 9px; font-weight: 700; color: white; text-align: center; line-height: 1.2; }
+.sticky-text { font-size: 13px; color: #44403C; line-height: 1.4; flex: 1; min-width: 0; word-break: break-word; }
+.sticky-text.ticked { text-decoration: line-through; color: #A8A29E; }
+.sticky-add {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  margin-top: 7px;
+  padding-top: 7px;
+  border-top: 1px dashed rgba(180,130,0,0.2);
+}
+.sticky-note input[type="text"] {
+  width: 100%;
+  padding: 2px 0 3px;
+  border: none;
+  border-bottom: 1.5px solid transparent;
+  border-radius: 0;
+  font-size: 13px;
+  background: transparent;
+  color: #44403C;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.12s;
+}
+.sticky-note input[type="text"]:focus { border-bottom-color: #D97706; }
+.sticky-note input[type="text"]::placeholder { color: #C6A96A; }
+
+/* ── Install button ── */
+.btn-install {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--accent);
+  background: var(--accent-bg);
+  border: 1px solid rgba(42,92,69,0.25);
+  padding: 5px 12px;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.12s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.btn-install:hover { background: var(--accent); color: white; border-color: var(--accent); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-top">
+    <div>
+      <h1>Daily OS</h1>
+      <div class="sub" id="date-display"></div>
+    </div>
+    <button id="install-btn" class="btn-install" style="display:none" onclick="installApp()">Install app</button>
+  </div>
+  <nav class="tab-bar">
+    <button class="tab-btn active" id="btn-today"     onclick="switchTab('today')">Today</button>
+    <button class="tab-btn"        id="btn-calendar"  onclick="switchTab('calendar')">Calendar</button>
+    <button class="tab-btn"        id="btn-deadlines" onclick="switchTab('deadlines')">Deadlines</button>
+    <button class="tab-btn"        id="btn-labs"      onclick="switchTab('labs')">Labs</button>
+    <button class="tab-btn"        id="btn-tasks"     onclick="switchTab('tasks')">Tasks</button>
+  </nav>
+</header>
+
+<main>
+
+  <!-- ══ TODAY ══ -->
+  <div id="tab-today">
+    <div id="setup-card" class="card" style="display:none">
+      <div class="label-row">API key needed</div>
+      <p class="setup-note">Enter your Anthropic API key once. Stored only in your browser — never shared.</p>
+      <div style="display:flex;gap:8px">
+        <input type="text" id="api-key-input" placeholder="sk-ant-..." autocomplete="off" style="flex:1">
+        <button class="btn-primary" onclick="saveApiKey()">Save</button>
+      </div>
+      <p class="key-note">Get a key at console.anthropic.com → API keys.</p>
+    </div>
+    <div id="focus-section"></div>
+    <div class="card">
+      <div class="section-head">Today's schedule</div>
+      <div id="today-schedule"></div>
+    </div>
+    <div class="card">
+      <div class="section-head">Upcoming deadlines</div>
+      <div id="upcoming-deadlines"></div>
+    </div>
+    <div id="completion-log-card" class="card" style="display:none">
+      <div class="section-head">Completed</div>
+      <div id="completion-log"></div>
+    </div>
+  </div>
+
+  <!-- ══ CALENDAR ══ -->
+  <div id="tab-calendar" style="display:none">
+    <div class="card">
+      <div class="cal-nav">
+        <button class="cal-nav-btn" onclick="calNav(-1)">‹</button>
+        <div class="cal-month-label" id="cal-month-label"></div>
+        <button class="cal-nav-btn" onclick="calNav(1)">›</button>
+      </div>
+      <div class="cal-weekdays">
+        <div class="cal-wd">M</div><div class="cal-wd">T</div><div class="cal-wd">W</div>
+        <div class="cal-wd">T</div><div class="cal-wd">F</div><div class="cal-wd">S</div><div class="cal-wd">S</div>
+      </div>
+      <div class="cal-grid" id="cal-grid"></div>
+      <div id="cal-detail"></div>
+    </div>
+    <div class="card" style="padding:14px 20px">
+      <div class="cal-legend">
+        <span class="cal-legend-item"><span class="cal-dot dot-class"   style="width:8px;height:8px"></span>Class</span>
+        <span class="cal-legend-item"><span class="cal-dot dot-sport"   style="width:8px;height:8px"></span>Sport / Fitness</span>
+        <span class="cal-legend-item"><span class="cal-dot dot-urgent"  style="width:8px;height:8px"></span>Deadline &lt;7d</span>
+        <span class="cal-legend-item"><span class="cal-dot dot-soon"    style="width:8px;height:8px"></span>Deadline &lt;14d</span>
+        <span class="cal-legend-item"><span class="cal-dot dot-ok"      style="width:8px;height:8px"></span>Deadline</span>
+        <span class="cal-legend-item"><span class="cal-dot dot-fl"      style="width:8px;height:8px"></span>Labs milestone</span>
+        <span class="cal-legend-item"><span class="cal-dot dot-exam"    style="width:8px;height:8px"></span>Exam</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ DEADLINES ══ -->
+  <div id="tab-deadlines" style="display:none">
+    <div class="card">
+      <div class="section-head" style="margin-bottom:4px">Exams</div>
+      <div id="dl-exams"></div>
+    </div>
+    <div class="card">
+      <div class="section-head" style="margin-bottom:4px">Academic</div>
+      <div id="dl-academic"></div>
+    </div>
+    <div class="card">
+      <div class="section-head" style="margin-bottom:4px">Filthy Labs milestones</div>
+      <div id="dl-labs"></div>
+    </div>
+  </div>
+
+  <!-- ══ LABS ══ -->
+  <div id="tab-labs" style="display:none">
+
+    <div class="phase-card">
+      <div class="phase-tag">Filthy Labs — Foundation Phase</div>
+      <div class="phase-title">Product Research Spreadsheet</div>
+      <div class="phase-goal">Research 20–30 products by 31 May 2026. Document each: price, market size, competition, opportunity score.</div>
+      <div class="phase-stats">
+        <div class="phase-stat">
+          <div class="phase-stat-num" id="fl-stat-done">0</div>
+          <div class="phase-stat-lbl">tasks done</div>
+        </div>
+        <div class="phase-stat">
+          <div class="phase-stat-num" id="fl-stat-log">0</div>
+          <div class="phase-stat-lbl">log entries</div>
+        </div>
+      </div>
+      <div class="product-counter">
+        <div class="product-counter-label">Products in spreadsheet</div>
+        <button class="counter-btn" onclick="updateProductCount(-1)">−</button>
+        <div class="counter-num" id="fl-product-count">0</div>
+        <button class="counter-btn" onclick="updateProductCount(1)">+</button>
+        <span style="font-size:12px;color:var(--muted)">/&nbsp;30 goal</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-head" style="margin-bottom:14px">Add task or milestone</div>
+      <div class="form-group">
+        <label>Title</label>
+        <input type="text" id="fl-title" placeholder="e.g. Research 5 more products">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Target date (optional)</label>
+          <input type="date" id="fl-date">
+        </div>
+        <div class="form-group">
+          <label>Type</label>
+          <select id="fl-type">
+            <option value="task">Task</option>
+            <option value="milestone">Milestone</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn-primary" onclick="addFlTask()" style="width:100%">Add</button>
+    </div>
+
+    <div class="card">
+      <div class="section-head" style="margin-bottom:4px">Quick log</div>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:12px">Jot down what you just did, learned, or noticed.</p>
+      <div style="display:flex;gap:8px">
+        <input type="text" id="fl-log-input" placeholder="e.g. Added 3 products, Sennheiser gap looks promising" style="flex:1" onkeydown="if(event.key==='Enter')addLog()">
+        <button class="btn-primary" onclick="addLog()">Log</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-head" style="margin-bottom:12px">Tasks & milestones</div>
+      <div id="fl-task-list"></div>
+    </div>
+
+    <div class="card">
+      <div class="section-head" style="margin-bottom:12px">Activity log</div>
+      <div id="fl-log-list"></div>
+    </div>
+
+  </div>
+
+  <!-- ══ TASKS (ACADEMIC) ══ -->
+  <div id="tab-tasks" style="display:none">
+    <div class="card">
+      <div class="section-head" style="margin-bottom:14px">Add academic task</div>
+      <div class="form-group">
+        <label>Task name</label>
+        <input type="text" id="t-title" placeholder="e.g. IR essay — write introduction">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Deadline</label>
+          <input type="date" id="t-deadline">
+        </div>
+        <div class="form-group">
+          <label>Type</label>
+          <select id="t-type">
+            <option value="essay">Essay / Paper</option>
+            <option value="problem-set">Problem set</option>
+            <option value="reading">Reading / Review</option>
+            <option value="presentation">Presentation</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Course (optional)</label>
+          <input type="text" id="t-course" placeholder="e.g. IR, Econometrics">
+        </div>
+        <div class="form-group">
+          <label>Notes (optional)</label>
+          <input type="text" id="t-notes" placeholder="Any extra context">
+        </div>
+      </div>
+      <button class="btn-primary" onclick="addTask()" style="width:100%;margin-top:4px">Add task</button>
+    </div>
+    <div class="card">
+      <div class="section-head" style="margin-bottom:14px">All academic tasks</div>
+      <div id="task-list"></div>
+    </div>
+  </div>
+
+</main>
+
+<div id="sticky-note" class="sticky-note" style="display:none">
+  <div class="sticky-header">
+    <span class="sticky-title">Quick notes</span>
+  </div>
+  <div class="sticky-body">
+    <div id="sticky-list"></div>
+    <div class="sticky-add">
+      <input type="text" id="sticky-input" placeholder="Add a reminder…" onkeydown="if(event.key==='Enter')addStickyNote()">
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── Constants ────────────────────────────────────────────────────────────────
+const DAYS        = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const MONTHS      = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const MONTHS_FULL = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+const WEEKLY = {
+  0: { label:'Sunday',    slots:[], note:'Recovery day.' },
+  1: { label:'Monday',    slots:[{t:'12:15–14:00',n:'EoC Lecture'},{t:'15:15–17:00',n:'Econometrics Lecture'},{t:'17:00–19:00',n:'Portuguese'}], note:'Heavy day — back-to-back lectures then Portuguese until 19:00. Morning is your only study window.' },
+  2: { label:'Tuesday',   slots:[{t:'15:15–17:00',n:'IR Lecture'},{t:'21:50',n:'Water polo'}], note:'Free morning until 15:15 — dedicated window for Econometrics review and problem set prep.' },
+  3: { label:'Wednesday', slots:[{t:'12:15–15:00',n:'EoC PBL (problem set due)'},{t:'17:00–18:00',n:'Hyrox'}], note:'EoC problem set due at 12:15. Free morning for final prep.' },
+  4: { label:'Thursday',  slots:[{t:'09:00–11:45',n:'Econometrics PBL (problem set due)'},{t:'12:15–15:00',n:'IR PBL (problem set due)'},{t:'22:15',n:'Water polo'}], note:'Both problem sets due today. Very limited free time — prep should be done by Wednesday.' },
+  5: { label:'Friday',    slots:[], note:'Completely free — best day for deep work.' },
+  6: { label:'Saturday',  slots:[{t:'22:00',n:'Water polo match'}], note:'Morning/afternoon free.' },
+};
+
+const ACADEMIC_PRESET = [
+  { id:'pre-1', title:'Draft paper',       deadline:'2026-05-15', type:'essay',        course:'Research', notes:'' },
+  { id:'pre-2', title:'IR presentation',   deadline:'2026-05-15', type:'presentation', course:'IR',       notes:'' },
+  { id:'pre-3', title:'Assignment',        deadline:'2026-05-17', type:'problem-set',  course:'',         notes:'' },
+  { id:'pre-4', title:'Peer feedback',     deadline:'2026-05-19', type:'other',        course:'',         notes:'' },
+  { id:'pre-5', title:'IR final essay',    deadline:'2026-05-24', type:'essay',        course:'IR',       notes:'Chunks: outline → intro → body → conclusion → polish' },
+  { id:'pre-6', title:'Exam week begins',  deadline:'2026-05-25', type:'other',        course:'All',      notes:'Runs 25–29 May' },
+  { id:'pre-7', title:'Research paper',    deadline:'2026-05-31', type:'essay',        course:'Research', notes:'' },
+];
+
+const FL_PRESET = [
+  { id:'fl-p1', title:'Build spreadsheet template',                        isMilestone:true,  targetDate:'2026-04-30', done:false, notes:'' },
+  { id:'fl-p2', title:'Research and add first 10 products',                isMilestone:true,  targetDate:'2026-05-10', done:false, notes:'' },
+  { id:'fl-p3', title:'Reach 20–30 products in spreadsheet',               isMilestone:true,  targetDate:'2026-05-31', done:false, notes:'Foundation phase goal' },
+  { id:'fl-p4', title:'Learn VS Code basics',                              isMilestone:false, targetDate:'',           done:false, notes:'' },
+  { id:'fl-p5', title:'Get comfortable with AI tools (Claude, Cursor)',    isMilestone:false, targetDate:'',           done:false, notes:'' },
+];
+
+const EXAMS = [
+  { id:'exam-econ', title:'Econometrics exam',         date:'2026-05-27', course:'Econometrics' },
+  { id:'exam-eoc',  title:'Economics of Conflict exam', date:'2026-05-28', course:'EoC' },
+];
+
+// ─── State ────────────────────────────────────────────────────────────────────
+const S = {
+  apiKey:        localStorage.getItem('org_key')           || '',
+  tasks:         JSON.parse(localStorage.getItem('org_tasks')     || 'null') ?? ACADEMIC_PRESET,
+  flTasks:       JSON.parse(localStorage.getItem('org_fl_tasks')  || 'null') ?? FL_PRESET,
+  flLog:         JSON.parse(localStorage.getItem('org_fl_log')    || 'null') ?? [],
+  flProducts:    parseInt(localStorage.getItem('org_fl_products') || '0'),
+  focus:         JSON.parse(localStorage.getItem('org_focus')     || 'null'),
+  focusDate:     localStorage.getItem('org_focusDate')    || '',
+  focusWindow:   localStorage.getItem('org_focusWindow')  || '',
+  completedLog:   JSON.parse(localStorage.getItem('org_completed')     || '[]'),
+  completedTasks: JSON.parse(localStorage.getItem('org_completed_ids') || '[]'),
+  sticky:         JSON.parse(localStorage.getItem('org_sticky')        || '[]'),
+};
+
+function persist() {
+  localStorage.setItem('org_tasks',       JSON.stringify(S.tasks));
+  localStorage.setItem('org_fl_tasks',    JSON.stringify(S.flTasks));
+  localStorage.setItem('org_fl_log',      JSON.stringify(S.flLog));
+  localStorage.setItem('org_fl_products', S.flProducts);
+  localStorage.setItem('org_focus',       JSON.stringify(S.focus));
+  localStorage.setItem('org_focusDate',   S.focusDate);
+  localStorage.setItem('org_focusWindow', S.focusWindow);
+  localStorage.setItem('org_completed',     JSON.stringify(S.completedLog));
+  localStorage.setItem('org_completed_ids', JSON.stringify(S.completedTasks));
+  localStorage.setItem('org_sticky',      JSON.stringify(S.sticky));
+  if (S.apiKey) localStorage.setItem('org_key', S.apiKey);
+}
+
+// ─── Calendar state ───────────────────────────────────────────────────────────
+let calYear     = new Date().getFullYear();
+let calMonth    = new Date().getMonth();
+let calSelected = null;
+
+// ─── Date helpers ─────────────────────────────────────────────────────────────
+function todayStr() { return new Date().toISOString().split('T')[0]; }
+function daysBetween(ds) {
+  if (!ds) return Infinity;
+  const t = new Date(ds + 'T00:00:00');
+  const n = new Date(); n.setHours(0,0,0,0);
+  return Math.round((t - n) / 86400000);
+}
+function fmtShort(ds)   { if (!ds) return ''; const [,m,d] = ds.split('-'); return `${+d} ${MONTHS[+m-1]}`; }
+function fmtLong()      { const n=new Date(); return `${DAYS[n.getDay()]}, ${n.getDate()} ${MONTHS[n.getMonth()]} ${n.getFullYear()}`; }
+function fmtDateFull(ds){ const d=new Date(ds+'T00:00:00'); return `${DAYS[d.getDay()]}, ${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`; }
+
+// ─── Tab switching ────────────────────────────────────────────────────────────
+const ALL_TABS = ['today','calendar','deadlines','labs','tasks'];
+function switchTab(tab) {
+  ALL_TABS.forEach(t => {
+    document.getElementById('tab-'+t).style.display = t===tab ? '' : 'none';
+    document.getElementById('btn-'+t).classList.toggle('active', t===tab);
+  });
+  document.getElementById('sticky-note').style.display = tab === 'today' ? '' : 'none';
+  if (tab==='calendar')  renderCalendar();
+  if (tab==='deadlines') renderDeadlinesTab();
+  if (tab==='labs')      renderLabs();
+  if (tab==='tasks')     renderTaskList();
+  if (tab==='today')     renderUpcomingDeadlines();
+}
+
+// ─── API key ──────────────────────────────────────────────────────────────────
+function saveApiKey() {
+  const v = document.getElementById('api-key-input').value.trim();
+  if (!v.startsWith('sk-ant-')) { alert('Anthropic API keys start with sk-ant-'); return; }
+  S.apiKey = v;
+  persist();
+  document.getElementById('setup-card').style.display = 'none';
+  generateFocus();
+}
+
+// ─── Recurring weekly problem sets ───────────────────────────────────────────
+// Returns the PS(es) that are active right now, based on day + time.
+// EoC PS:         due Wed 12:15 — active from Sun 18:00 through Wed before 12:15
+// Econometrics PS: due Thu 9:00  — active from Mon after 15:15 through Thu before 9:00
+// IR PS:           due Thu 12:15 — active from Tue after 15:15 through Thu before 12:15
+function getRecurringPS() {
+  const now  = new Date();
+  const dow  = now.getDay();                            // 0=Sun … 6=Sat
+  const hour = now.getHours() + now.getMinutes() / 60; // decimal hours
+  // Date-stamp: use the due date so the same key applies across the whole active window
+  const wedDate = (() => { const d = new Date(now); d.setDate(d.getDate() + ((3 - dow + 7) % 7 || 7) * (dow > 3 ? 1 : 0) + (dow <= 3 ? (3 - dow) : 0)); return d.toISOString().split('T')[0]; })();
+  const thuDate = (() => { const d = new Date(now); const diff = (4 - dow + 7) % 7 || 7; d.setDate(d.getDate() + (dow <= 4 ? 4 - dow : 7 - dow + 4)); return d.toISOString().split('T')[0]; })();
+  const active = [];
+
+  // EoC PS: due Wednesday 12:15
+  // Active: Sunday ≥ 18:00, all of Monday, all of Tuesday, Wednesday < 12:15
+  const eocActive =
+    (dow === 0 && hour >= 18) ||
+    (dow === 1) ||
+    (dow === 2) ||
+    (dow === 3 && hour < 12.25);
+  if (eocActive) {
+    active.push({
+      id:   `ps-ecb307-${todayStr()}`,
+      name: 'Economics of Conflict weekly problem set',
+      due:  'Wednesday at 12:15 (start of EoC PBL)',
+    });
+  }
+
+  // Econometrics PS: due Thursday 9:00
+  // Active: Monday ≥ 15:15 (after Econometrics lecture), Tuesday, Wednesday, Thursday < 9:00
+  const econActive =
+    (dow === 1 && hour >= 15.25) ||
+    (dow === 2) ||
+    (dow === 3) ||
+    (dow === 4 && hour < 9);
+  if (econActive) {
+    active.push({
+      id:   `ps-ecb207-${todayStr()}`,
+      name: 'Econometrics weekly problem set',
+      due:  'Thursday at 9:00 (start of Econometrics PBL)',
+    });
+  }
+
+  // IR PS: due Thursday 12:15
+  // Active: Tuesday ≥ 15:15 (after IR lecture), Wednesday, Thursday < 12:15
+  const irActive =
+    (dow === 2 && hour >= 15.25) ||
+    (dow === 3) ||
+    (dow === 4 && hour < 12.25);
+  if (irActive) {
+    active.push({
+      id:   `ps-ir-${todayStr()}`,
+      name: 'International Relations weekly problem set',
+      due:  'Thursday at 12:15 (start of IR PBL)',
+    });
+  }
+
+  return active;
+}
+
+// A short string identifying which recurring-PS window we're in.
+// Used as a secondary cache key so the focus regenerates when the window changes
+// (e.g. Wednesday morning → Wednesday afternoon triggers a fresh recommendation).
+function currentWindow() {
+  const ps   = getRecurringPS();
+  const exam = getNearestExam();
+  const examKey = !exam ? '' : exam.days <= 7 ? `exam-critical-${exam.id}` : exam.days <= 14 ? `exam-active-${exam.id}` : '';
+  const psKey   = ps.map(p => p.id).join('+') || 'standard';
+  return [psKey, examKey].filter(Boolean).join('|') || 'standard';
+}
+
+// ─── Exam helpers ─────────────────────────────────────────────────────────────
+function getUpcomingExams() {
+  return EXAMS
+    .map(e => ({ ...e, days: daysBetween(e.date) }))
+    .filter(e => e.days >= 0)
+    .sort((a, b) => a.days - b.days);
+}
+
+function getNearestExam() {
+  const upcoming = getUpcomingExams();
+  return upcoming.length ? upcoming[0] : null;
+}
+
+// Returns lectures that happened in the past 24–48 h and are due for review.
+// Tuesday: both Monday lectures (EoC + Econometrics) need review.
+// Wednesday: Tuesday IR lecture needs review.
+// Thursday is all PBLs — no lecture review needed after it.
+function getRecentLectures() {
+  const dow   = new Date().getDay(); // 0=Sun … 6=Sat
+  const today = todayStr();
+  const map = {
+    0: [],
+    1: [],
+    2: [
+      { id: `lect-eoc-${today}`,  name: 'Economics of Conflict lecture (Monday, 24h ago)' },
+      { id: `lect-econ-${today}`, name: 'Econometrics lecture (Monday, 24h ago)' },
+    ],
+    3: [{ id: `lect-ir-${today}`, name: 'International Relations lecture (Tuesday, 24h ago)' }],
+    4: [],
+    5: [],
+    6: [],
+  };
+  return map[dow] || [];
+}
+
+// Pre-computes which essay chunk to recommend based on days remaining.
+// Returns null if the essay is outside its active window (> 14 days or already in tier 1).
+function essayChunk(days) {
+  if (days >= 8 && days <= 14) return 'Write the outline';
+  if (days >= 4 && days <= 7)  return 'Write the draft';
+  if (days >= 1 && days <= 3)  return 'Revise and finalise';
+  return null; // > 14 days: not yet active. ≤ 0: already in tier 1.
+}
+
+// ─── Prompt builder ───────────────────────────────────────────────────────────
+function buildPrompt() {
+  const dow         = new Date().getDay();
+  const sched       = WEEKLY[dow];
+  // Filter recurring PS by completedTasks so completed-today ones are excluded
+  const recurringPS = getRecurringPS().filter(p => !S.completedTasks.includes(p.id));
+
+  // All pending academic tasks — exclude done and already-completed-today
+  const allAcademic = S.tasks
+    .filter(t => !t.done && !S.completedTasks.includes(t.id))
+    .map(t => ({ ...t, days: daysBetween(t.deadline) }))
+    .filter(t => t.days >= 0 && t.days <= 60)
+    .sort((a,b) => a.days - b.days);
+
+  // Exam context
+  const nearExam      = getNearestExam();
+  const examCritical  = nearExam && nearExam.days >= 1 && nearExam.days <= 7;
+  const examActive    = nearExam && nearExam.days >= 1 && nearExam.days <= 14;
+
+  // ── Pre-compute priority tiers ──────────────────────────────────────────────
+
+  // Tier 1 — anything due within 2 days (any type)
+  const tier1 = allAcademic.filter(t => t.days <= 2);
+
+  // Tier 2 — problem sets due within 3 days (not already in tier 1)
+  const tier2 = allAcademic.filter(t => t.type === 'problem-set' && t.days > 2 && t.days <= 3);
+
+  // Tier 3 — lecture review due (24–48 h window)
+  const tier3 = getRecentLectures();
+
+  // Tier 4 — essays/presentations in their active window (chunk pre-determined)
+  const tier4 = allAcademic
+    .filter(t => ['essay', 'presentation'].includes(t.type) && t.days > 2)
+    .map(t => { const ch = essayChunk(t.days); return ch ? { ...t, chunk: ch } : null; })
+    .filter(Boolean);
+
+  // Tier 5 — reading/admin/other with nearest due date (≤ 14 days, not already covered)
+  const tier5 = allAcademic
+    .filter(t => !['essay', 'presentation', 'problem-set'].includes(t.type) && t.days > 2 && t.days <= 14)
+    .slice(0, 3);
+
+  // FL tasks (only offered if no urgent academic work) — also filter by completedTasks
+  const urgentAcademic = recurringPS.length > 0 || allAcademic.some(t => t.days <= 7);
+  const flPending = S.flTasks
+    .filter(t => !t.done && !S.completedTasks.includes(t.id))
+    .map(t => ({ ...t, days: t.targetDate ? daysBetween(t.targetDate) : 999 }))
+    .sort((a,b) => a.days - b.days);
+
+  // ── Format helpers — include task ID so Claude can echo it back ─────────────
+  const fmtTask = t =>
+    `  • [id:${t.id}] "${t.title}"${t.course?' ('+t.course+')':''} — ${t.days}d remaining${t.notes?' | note: '+t.notes:''}`;
+  const fmtChunk = t =>
+    `  • [id:${t.id}] ${t.chunk} — "${t.title}"${t.course?' ('+t.course+')':''} — ${t.days}d remaining`;
+  const fmtLect = t => `  • [id:${t.id}] ${t.name}`;
+  const fmtFL   = t =>
+    `  • [id:${t.id}] "${t.title}" | ${t.isMilestone?'milestone':'task'}${t.targetDate?' | target '+fmtShort(t.targetDate)+' ('+t.days+'d)':''}`;
+
+  const schedLines = sched.slots.length
+    ? sched.slots.map(s => `  ${s.t}: ${s.n}`).join('\n')
+    : '  None — open day.';
+
+  const flSection = !urgentAcademic && flPending.length
+    ? `FILTHY LABS (recommend only if all academic tiers are empty):
+Phase: Foundation — goal 20–30 products by 31 May 2026
+Pending tasks:
+${flPending.map(fmtFL).join('\n')}`
+    : `FILTHY LABS: Do not recommend today — academic work is pending or urgent.`;
+
+  return `You are a calm, practical academic organiser. Recommend exactly ONE task.
+
+TODAY: ${fmtLong()} — ${sched.label}
+Schedule: ${sched.slots.length ? sched.slots.map(s=>s.n).join(', ') : 'completely free'}
+${schedLines}
+Note: ${sched.note}
+
+════ PRIORITY TIERS — work top-down; pick ONE task from the FIRST non-empty tier ════
+
+TIER EXAM-CRITICAL — EXAM WITHIN 7 DAYS (highest priority — overrides ALL tiers including Tier 0):
+${examCritical
+  ? `  ⚠ CRITICAL: ${nearExam.title} in ${nearExam.days} day${nearExam.days===1?'':'s'} (${fmtShort(nearExam.date)}) — recommend only focused exam revision. Be specific: past papers, key topics, formula sheets, practice questions.`
+  : '  (not active)'}
+
+TIER 0 — RECURRING WEEKLY PS (mandatory override — if active, and no exam within 7 days, recommend nothing else):
+Every Wednesday 12:15: Economics of Conflict problem set due at start of class.
+Every Thursday 9:00:   Econometrics problem set due at start of class.
+${recurringPS.length
+  ? recurringPS.map(p=>`  ⚠ ACTIVE: [id:${p.id}] ${p.name} — due ${p.due}`).join('\n')
+  : '  (not active right now)'}
+
+TIER 1 — Due within 2 days (any type) OR exam approaching in 8–14 days:
+${tier1.length ? tier1.map(fmtTask).join('\n') : '  (none)'}
+${examActive && !examCritical
+  ? `  ⚠ EXAM IN ${nearExam.days} DAYS: ${nearExam.title} (${fmtShort(nearExam.date)}) — include revision as high priority alongside or above regular assignments`
+  : ''}
+
+TIER 2 — Problem sets due within 3 days:
+${tier2.length ? tier2.map(fmtTask).join('\n') : '  (none)'}
+
+TIER 3 — Lecture review (24–48 h window, only if not yet reviewed):
+${tier3.length ? tier3.map(fmtLect).join('\n') : '  (none)'}
+
+TIER 4 — Essays/presentations in their active window (use the exact chunk shown):
+${tier4.length ? tier4.map(fmtChunk).join('\n') : '  (none — essays either > 14 days away or < 4 days away and already in tier 1)'}
+
+TIER 5 — Reading / admin / other with nearest due date (≤ 14 days):
+${tier5.length ? tier5.map(fmtTask).join('\n') : '  (none)'}
+
+${flSection}
+
+════ RULES ════
+0. If Tier EXAM-CRITICAL is active → recommend ONLY exam revision for the nearest exam. Ignore all other tiers.
+1. If Tier 0 is active (and no exam within 7 days) → recommend ONLY that recurring PS.
+2. Recommend exactly ONE task from the FIRST non-empty tier (EXAM-CRITICAL → 0 → 1 → 2 → 3 → 4 → 5).
+3. For Tier 4 essays: use the pre-determined chunk label EXACTLY as written (e.g. "Write the outline for…"). Never say "work on the essay".
+4. For Tier 3 (lecture review): name the specific course and suggest reviewing key concepts from that lecture. Only surface if the student hasn't reviewed it yet.
+5. Never recommend FL if Tiers EXAM-CRITICAL–3 have anything, or if any academic deadline is within 7 days.
+6. Thursday has two back-to-back PBLs (Econometrics 9–11:45, IR 12:15–15:00) plus water polo at 22:15 — recommend nothing new, only what is already due today.
+7. Friday is completely free — recommend the highest-effort task available.
+8. Sunday: recommend rest unless Tier EXAM-CRITICAL or Tier 1 is non-empty.
+9. Econometrics lecture review and problem set prep are scheduled Tuesday mornings only — the lecture is on Monday.
+10. Match the time estimate to today's real free windows.
+
+Respond with ONLY valid JSON, no markdown fences, no extra text:
+{
+  "task_id":  "copy the exact string from the [id:...] tag of the task you selected — e.g. 'pre-1' or 'ps-ecb307-2026-05-14'. Empty string only for the rest/fallback case.",
+  "task":     "Specific, concrete, actionable task",
+  "course":   "Course name, 'Filthy Labs', or empty string",
+  "category": "academic|filthy-labs",
+  "type":     "essay|problem-set|reading|review|presentation|exam-revision|fl-research|fl-learning|other",
+  "urgency":  "urgent|soon|normal",
+  "duration": "e.g. 45–60 min",
+  "reason":   "2–3 sentences: which tier this came from, why it's the right call, referencing the deadline and today's schedule."
+}`;
+}
+
+// ─── Generate / render focus ──────────────────────────────────────────────────
+async function generateFocus(force=false) {
+  const t = todayStr();
+  const w = currentWindow();
+  if (!force && S.focus && S.focusDate===t && S.focusWindow===w) { renderFocus(S.focus); return; }
+  if (!S.apiKey) {
+    document.getElementById('setup-card').style.display = '';
+    document.getElementById('focus-section').innerHTML = '';
+    return;
+  }
+
+  // Exam-day override — no API call needed.
+  const examToday = EXAMS.find(e => e.date === t);
+  if (examToday) {
+    const examFocus = {
+      task:     `${examToday.title} today — you've prepared for this. Go execute.`,
+      course:   examToday.course,
+      category: 'academic',
+      type:     'exam',
+      urgency:  'urgent',
+      duration: '',
+      reason:   `It's exam day. No new preparation needed — trust your work and focus on performing well in the room.`,
+    };
+    S.focus = examFocus; S.focusDate = t; S.focusWindow = w;
+    persist();
+    renderFocus(examFocus);
+    return;
+  }
+
+  // Empty-state check: nothing qualifies across all tiers → skip API call entirely.
+  // Condition: no recurring PS, no academic tasks within 14 days, no recent lectures, no exam within 14 days.
+  {
+    const _ps   = getRecurringPS().filter(p => !S.completedTasks.includes(p.id));
+    const _near = S.tasks.filter(tk => !tk.done && !S.completedTasks.includes(tk.id)).some(tk => { const d=daysBetween(tk.deadline); return d>=0 && d<=14; });
+    const _lect = getRecentLectures().filter(l => !S.completedTasks.includes(l.id)).length > 0;
+    const _exam = getUpcomingExams().some(e => e.days <= 14);
+    if (!_ps.length && !_near && !_lect && !_exam) {
+      const rest = {
+        task: 'Nothing urgent today — good day to get ahead or rest.',
+        course: '', category: 'academic', type: 'other', urgency: 'normal', duration: '',
+        reason: 'No deadlines within 14 days and no active problem sets or recent lectures to review. Use this time to rest, review anything from the week, or make progress on Filthy Labs.',
+      };
+      S.focus = rest; S.focusDate = t; S.focusWindow = w;
+      persist();
+      renderFocus(rest);
+      return;
+    }
+  }
+
+  document.getElementById('focus-section').innerHTML = `
+    <div class="card loading-wrap">
+      <div class="spinner"></div>
+      <div class="loading-text">Finding what matters most today…</div>
+    </div>`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'x-api-key': S.apiKey,
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true',
+      },
+      body: JSON.stringify({
+        model:'claude-sonnet-4-6',
+        max_tokens:400,
+        messages:[{role:'user', content:buildPrompt()}],
+      }),
+    });
+
+    if (!res.ok) {
+      const e = await res.json().catch(()=>({}));
+      throw new Error(e.error?.message || `HTTP ${res.status}`);
+    }
+    const data = await res.json();
+    const raw  = data.content?.[0]?.text || '';
+    let focus;
+    try { focus = JSON.parse(raw.trim()); }
+    catch { throw new Error('Unexpected response — try again.'); }
+
+    S.focus = focus; S.focusDate = t; S.focusWindow = w;
+    persist();
+    renderFocus(focus);
+  } catch(err) {
+    document.getElementById('focus-section').innerHTML = `
+      <div class="card">
+        <div class="label-row" style="color:var(--red)">Could not load focus</div>
+        <p style="font-size:14px;color:var(--muted);margin-bottom:16px">${esc(err.message)}</p>
+        <button class="btn-primary" onclick="generateFocus(true)">Retry</button>
+      </div>`;
+  }
+}
+
+function renderFocus(f) {
+  const isFL      = f.category === 'filthy-labs';
+  const isExamDay = f.type === 'exam';
+  const labelText = isFL ? "Today's focus — Filthy Labs" : "Today's focus";
+  const ub = isExamDay                ? `<span class="badge b-exam">Exam day</span>`
+           : f.urgency==='urgent'     ? `<span class="badge b-red">Urgent</span>`
+           : f.urgency==='soon'       ? `<span class="badge b-amber">Due soon</span>`
+           :                            `<span class="badge b-green">On track</span>`;
+  const cb = f.course ? `<span class="badge ${isFL?'b-purple':isExamDay?'b-exam':'b-green'}">${esc(f.course)}</span>` : '';
+  const db = f.duration ? `<span class="badge b-grey">${esc(f.duration)}</span>` : '';
+
+  const actionBtns = isExamDay
+    ? `<button class="btn-ghost" onclick="generateFocus(true)">Refresh</button>`
+    : `<button class="btn-primary" onclick="markFocusDone()">Mark as done</button>
+       <button class="btn-ghost" onclick="generateFocus(true)">Show me something else</button>`;
+
+  document.getElementById('focus-section').innerHTML = `
+    <div class="card slide-in">
+      <div class="label-row${isFL?' fl':''}">${labelText}</div>
+      <div class="focus-task">${esc(f.task)}</div>
+      <div class="focus-badges">${ub}${cb}${db}</div>
+      <div class="focus-reason">${esc(f.reason)}</div>
+      <div class="focus-actions">${actionBtns}</div>
+    </div>`;
+}
+
+// ─── Mark focus done ──────────────────────────────────────────────────────────
+function markFocusDone() {
+  if (!S.focus) return;
+
+  const taskId = S.focus.task_id || '';
+
+  // Register the ID immediately so the next generation won't re-surface it
+  if (taskId && !S.completedTasks.includes(taskId)) {
+    S.completedTasks.push(taskId);
+  }
+
+  // If it matches a task in S.tasks, mark it visually done in the deadlines tab
+  if (taskId) {
+    const acadMatch = S.tasks.find(t => t.id === taskId);
+    if (acadMatch) acadMatch.done = true;
+    const flMatch = S.flTasks.find(t => t.id === taskId);
+    if (flMatch) flMatch.done = true;
+  }
+
+  // Log for display
+  S.completedLog.push({ ...S.focus, completedDate: todayStr(), id: 'done-' + Date.now() });
+
+  // Clear focus so generateFocus always runs fresh
+  S.focus = null; S.focusDate = ''; S.focusWindow = '';
+  persist();
+  renderCompletionLog();
+  generateFocus(true);
+}
+
+function renderCompletionLog() {
+  const card = document.getElementById('completion-log-card');
+  const el   = document.getElementById('completion-log');
+  if (!S.completedLog.length) { card.style.display = 'none'; return; }
+  card.style.display = '';
+  el.innerHTML = [...S.completedLog].reverse().map(e => `
+    <div class="log-item">
+      <div class="log-date">${fmtShort(e.completedDate)}</div>
+      <div class="log-entry">${esc(e.task)}${e.course ? ` <span style="color:var(--muted);font-size:12px">(${esc(e.course)})</span>` : ''}</div>
+    </div>`).join('');
+}
+
+// ─── Today's schedule ─────────────────────────────────────────────────────────
+function renderSchedule() {
+  const dow   = new Date().getDay();
+  const sched = WEEKLY[dow];
+  const el    = document.getElementById('today-schedule');
+
+  if (!sched.slots.length) {
+    el.innerHTML = `<div class="sched-note" style="padding:2px 0">${esc(sched.note)}</div>`;
+    return;
+  }
+  const banner = dow === 1
+    ? `<div style="background:var(--amber-bg);color:var(--amber);border-radius:8px;padding:9px 12px;font-size:13px;font-weight:500;margin-bottom:12px">⚠️ Heavy day — back-to-back lectures then Portuguese until 19:00. Your only study window is this morning.</div>`
+    : '';
+  el.innerHTML = banner + sched.slots.map(s => `
+    <div class="sched-item">
+      <span class="sched-time">${esc(s.t)}</span>
+      <span class="sched-name">${esc(s.n)}</span>
+    </div>`).join('') + `<div class="sched-note">${esc(sched.note)}</div>`;
+}
+
+// ─── Upcoming deadlines (Today tab) ──────────────────────────────────────────
+function renderUpcomingDeadlines() {
+  const el = document.getElementById('upcoming-deadlines');
+  const academic = S.tasks
+    .filter(t => !t.done)
+    .map(t => ({ ...t, days:daysBetween(t.deadline), source:'academic' }));
+  const fl = S.flTasks
+    .filter(t => t.targetDate && !t.done)
+    .map(t => ({ ...t, deadline:t.targetDate, days:daysBetween(t.targetDate), source:'labs' }));
+  const exams = EXAMS
+    .map(e => ({ ...e, deadline:e.date, days:daysBetween(e.date), source:'exam' }));
+
+  const list = [...exams, ...academic, ...fl]
+    .filter(t => t.days >= 0 && t.days <= 45)
+    .sort((a,b) => a.days - b.days)
+    .slice(0, 8);
+
+  if (!list.length) {
+    el.innerHTML = `<div class="empty">No upcoming deadlines. Add tasks in the Tasks tab.</div>`;
+    return;
+  }
+  el.innerHTML = list.map(t => {
+    const isExam = t.source === 'exam';
+    const cls = isExam ? 'b-exam' : t.days<=6 ? 'b-red' : t.days<=13 ? 'b-amber' : 'b-green';
+    const lbl = t.days===0 ? 'Today' : t.days===1 ? 'Tomorrow' : `${t.days}d`;
+    const sub = isExam ? 'Exam' : t.source==='labs' ? 'Filthy Labs' : t.course;
+    return `
+      <div class="dl-item">
+        <div>
+          <div class="dl-name" style="${isExam?'font-weight:600':''}">${esc(t.title)}</div>
+          ${sub ? `<div class="dl-sub">${esc(sub)}</div>` : ''}
+        </div>
+        <span class="dl-days badge ${cls}">${lbl}</span>
+      </div>`;
+  }).join('');
+}
+
+// ─── Deadlines tab ────────────────────────────────────────────────────────────
+function renderDeadlinesTab() {
+  // Exams
+  const exEl   = document.getElementById('dl-exams');
+  const examList = EXAMS.map(e => ({ ...e, days: daysBetween(e.date) })).sort((a,b) => a.days - b.days);
+  exEl.innerHTML = examList.map(e => {
+    const cls = e.days <= 0 ? 'b-exam' : e.days <= 7 ? 'b-exam' : e.days <= 14 ? 'b-amber' : 'b-grey';
+    const lbl = e.days < 0 ? 'Past' : e.days === 0 ? 'Today' : e.days === 1 ? 'Tomorrow' : `${e.days}d`;
+    return `
+      <div class="dl-item">
+        <div>
+          <div class="dl-name" style="font-weight:600">${esc(e.title)}</div>
+          <div class="dl-sub">${fmtShort(e.date)} · ${esc(e.course)}</div>
+        </div>
+        <span class="dl-days badge ${cls}">${lbl}</span>
+      </div>`;
+  }).join('');
+
+  // Academic
+  const acEl   = document.getElementById('dl-academic');
+  const sorted = S.tasks
+    .map(t => ({ ...t, days:daysBetween(t.deadline) }))
+    .sort((a,b) => {
+      // Undone tasks first, then sort by days
+      if (!!a.done !== !!b.done) return a.done ? 1 : -1;
+      return a.days - b.days;
+    });
+
+  if (!sorted.length) {
+    acEl.innerHTML = `<div class="empty">No academic tasks. Add them in the Tasks tab.</div>`;
+  } else {
+    const TYPE_LABEL = {essay:'Essay','problem-set':'Problem set',reading:'Reading',review:'Review',presentation:'Presentation',other:'Other'};
+    acEl.innerHTML = sorted.map(t => {
+      const cls = t.done ? 'b-grey' : t.days<0 ? 'b-red' : t.days<=6 ? 'b-red' : t.days<=13 ? 'b-amber' : 'b-green';
+      const lbl = t.done ? 'Done' : t.days<0 ? 'Overdue' : t.days===0 ? 'Today' : t.days===1 ? 'Tomorrow' : `${t.days}d`;
+      return `
+        <div class="dl-item">
+          <div>
+            <div class="dl-name" style="${t.done?'text-decoration:line-through;color:var(--muted)':''}">${esc(t.title)}</div>
+            <div class="dl-sub">${fmtShort(t.deadline)}${t.course?' · '+esc(t.course):''} · ${TYPE_LABEL[t.type]||t.type}</div>
+          </div>
+          <span class="dl-days badge ${cls}">${lbl}</span>
+        </div>`;
+    }).join('');
+  }
+
+  // FL milestones with dates
+  const flEl  = document.getElementById('dl-labs');
+  const flDl  = S.flTasks
+    .filter(t => t.targetDate)
+    .map(t => ({ ...t, days:daysBetween(t.targetDate) }))
+    .sort((a,b) => a.days - b.days);
+
+  if (!flDl.length) {
+    flEl.innerHTML = `<div class="empty">No Labs milestones with dates. Add them in the Labs tab.</div>`;
+  } else {
+    flEl.innerHTML = flDl.map(t => {
+      const cls = t.done ? 'b-grey' : t.days<0 ? 'b-red' : t.days<=6 ? 'b-red' : t.days<=13 ? 'b-amber' : 'b-green';
+      const lbl = t.done ? 'Done' : t.days<0 ? 'Overdue' : t.days===0 ? 'Today' : t.days===1 ? 'Tomorrow' : `${t.days}d`;
+      return `
+        <div class="dl-item">
+          <div>
+            <div class="dl-name" style="${t.done?'text-decoration:line-through;color:var(--muted)':''}">${t.isMilestone?'★ ':''}${esc(t.title)}</div>
+            <div class="dl-sub">Target: ${fmtShort(t.targetDate)}</div>
+          </div>
+          <span class="dl-days badge ${cls}">${lbl}</span>
+        </div>`;
+    }).join('');
+  }
+}
+
+// ─── Calendar ─────────────────────────────────────────────────────────────────
+function calNav(dir) {
+  calMonth += dir;
+  if (calMonth < 0)  { calMonth = 11; calYear--; }
+  if (calMonth > 11) { calMonth = 0;  calYear++; }
+  renderCalendar();
+}
+
+function renderCalendar() {
+  const now    = new Date();
+  const todayY = now.getFullYear(), todayM = now.getMonth(), todayD = now.getDate();
+  document.getElementById('cal-month-label').textContent = `${MONTHS_FULL[calMonth]} ${calYear}`;
+
+  const firstDow  = new Date(calYear, calMonth, 1).getDay();
+  const startOff  = (firstDow + 6) % 7;
+  const daysInMon = new Date(calYear, calMonth + 1, 0).getDate();
+  const prevLen   = new Date(calYear, calMonth, 0).getDate();
+
+  // Build deadline lookup: date-string → array of items
+  const dlMap = {};
+  const addToDlMap = (ds, item) => {
+    if (!ds) return;
+    if (!dlMap[ds]) dlMap[ds] = [];
+    dlMap[ds].push(item);
+  };
+  S.tasks.forEach(t => addToDlMap(t.deadline, { ...t, isFL:false }));
+  S.flTasks.filter(t => t.targetDate && !t.done).forEach(t => addToDlMap(t.targetDate, { ...t, isFL:true }));
+
+  let html = '';
+
+  // Leading cells
+  for (let i = startOff - 1; i >= 0; i--) {
+    html += `<div class="cal-cell other-month"><div class="cal-num">${prevLen - i}</div></div>`;
+  }
+
+  // Month days
+  for (let d = 1; d <= daysInMon; d++) {
+    const ds  = `${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const dow = new Date(calYear, calMonth, d).getDay();
+    const isToday    = calYear===todayY && calMonth===todayM && d===todayD;
+    const isSelected = calSelected === ds;
+
+    const dots    = computeDots(ds, dow, dlMap);
+    const dotHtml = dots.map(dt => `<div class="cal-dot dot-${dt}"></div>`).join('');
+    const cls = [isToday?'is-today':'', isSelected&&!isToday?'is-selected':''].filter(Boolean).join(' ');
+
+    html += `
+      <div class="cal-cell ${cls}" onclick="selectCalDay('${ds}')">
+        <div class="cal-num">${d}</div>
+        <div class="cal-dots">${dotHtml}</div>
+      </div>`;
+  }
+
+  // Trailing cells
+  const totalCells = startOff + daysInMon;
+  const trailing   = (7 - (totalCells % 7)) % 7;
+  for (let i = 1; i <= trailing; i++) {
+    html += `<div class="cal-cell other-month"><div class="cal-num">${i}</div></div>`;
+  }
+
+  document.getElementById('cal-grid').innerHTML = html;
+  renderCalDetail();
+}
+
+function computeDots(ds, dow, dlMap) {
+  const dots  = [];
+  const sched = WEEKLY[dow];
+
+  const isSport = s => s.n.toLowerCase().includes('polo') || s.n.toLowerCase().includes('hyrox');
+  if (sched?.slots.some(isSport))  dots.push('sport');
+  if (sched?.slots.some(s => !isSport(s))) dots.push('class');
+
+  const dls      = dlMap[ds] || [];
+  const academic = dls.filter(t => !t.isFL);
+  const fl       = dls.filter(t =>  t.isFL);
+
+  if (academic.length) {
+    const days = daysBetween(ds);
+    dots.push(days <= 6 ? 'urgent' : days <= 13 ? 'soon' : 'ok');
+  }
+  if (fl.length) dots.push('fl');
+  if (EXAMS.some(e => e.date === ds)) dots.push('exam');
+
+  return [...new Set(dots)].slice(0, 5);
+}
+
+function selectCalDay(ds) {
+  calSelected = calSelected === ds ? null : ds;
+  renderCalendar();
+}
+
+function renderCalDetail() {
+  const el = document.getElementById('cal-detail');
+  if (!calSelected) { el.innerHTML = ''; return; }
+
+  const d    = new Date(calSelected + 'T00:00:00');
+  const dow  = d.getDay();
+  const sched = WEEKLY[dow];
+
+  const dls = [
+    ...S.tasks.map(t => ({ ...t, isFL:false, isExam:false })).filter(t => t.deadline === calSelected),
+    ...S.flTasks.filter(t => t.targetDate === calSelected).map(t => ({ ...t, isFL:true, isExam:false })),
+    ...EXAMS.filter(e => e.date === calSelected).map(e => ({ ...e, deadline:e.date, isFL:false, isExam:true })),
+  ];
+
+  let html = `<div class="cal-detail"><div class="cal-detail-date">${fmtDateFull(calSelected)}</div>`;
+
+  // Schedule
+  html += `<div class="cal-detail-section"><div class="cal-detail-label">Schedule</div>`;
+  if (sched?.slots.length) {
+    html += sched.slots.map(s => `<div class="cal-detail-row">${esc(s.t)} — ${esc(s.n)}</div>`).join('');
+  } else {
+    html += `<div class="cal-detail-row" style="color:var(--muted)">${esc(sched?.note||'No commitments.')}</div>`;
+  }
+  html += `</div>`;
+
+  // Deadlines / Exams
+  if (dls.length) {
+    html += `<div class="cal-detail-section"><div class="cal-detail-label">Deadlines</div>`;
+    html += dls.map(t => {
+      const src = t.isExam  ? `<span class="badge b-exam"   style="font-size:11px;padding:1px 7px;margin-left:6px">Exam</span>`
+                : t.isFL    ? `<span class="badge b-purple" style="font-size:11px;padding:1px 7px;margin-left:6px">Labs</span>`
+                : '';
+      const sub = !t.isFL && !t.isExam && t.course ? ` <span style="color:var(--muted)">(${esc(t.course)})</span>` : '';
+      const style = t.isExam ? ' style="font-weight:600;color:var(--exam)"' : '';
+      return `<div class="cal-detail-row"${style}>${esc(t.title)}${sub}${src}</div>`;
+    }).join('');
+    html += `</div>`;
+  }
+
+  html += `</div>`;
+  el.innerHTML = html;
+}
+
+// ─── Labs ─────────────────────────────────────────────────────────────────────
+function renderLabs() {
+  const done = S.flTasks.filter(t => t.done).length;
+  document.getElementById('fl-stat-done').textContent = done;
+  document.getElementById('fl-stat-log').textContent  = S.flLog.length;
+  document.getElementById('fl-product-count').textContent = S.flProducts;
+
+  // Tasks (milestones first, undone first)
+  const items = [
+    ...S.flTasks.filter(t => t.isMilestone).sort((a,b) => {
+      if (a.done !== b.done) return a.done ? 1 : -1;
+      if (a.targetDate && b.targetDate) return a.targetDate.localeCompare(b.targetDate);
+      return a.targetDate ? -1 : 1;
+    }),
+    ...S.flTasks.filter(t => !t.isMilestone).sort((a,b) => a.done===b.done ? 0 : a.done ? 1 : -1),
+  ];
+
+  const listEl = document.getElementById('fl-task-list');
+  if (!items.length) {
+    listEl.innerHTML = `<div class="empty">No tasks yet — add one above.</div>`;
+  } else {
+    listEl.innerHTML = items.map(t => {
+      const datePart = t.targetDate ? ` · Target: ${fmtShort(t.targetDate)}` : '';
+      const typePart = t.isMilestone ? '★ Milestone' : 'Task';
+      return `
+        <div class="fl-item">
+          <div class="fl-check ${t.done?'done':''}" onclick="toggleFlTask('${t.id}')"></div>
+          <div class="fl-info">
+            <div class="fl-title ${t.done?'done':''}">${t.isMilestone?`<strong>${esc(t.title)}</strong>`:esc(t.title)}</div>
+            <div class="fl-meta">${typePart}${datePart}</div>
+          </div>
+          <button class="btn-remove" onclick="removeFlTask('${t.id}')">✕</button>
+        </div>`;
+    }).join('');
+  }
+
+  // Log (reverse chrono)
+  const logEl = document.getElementById('fl-log-list');
+  if (!S.flLog.length) {
+    logEl.innerHTML = `<div class="empty">Nothing logged yet — use the quick log above.</div>`;
+  } else {
+    logEl.innerHTML = [...S.flLog].reverse().map(l => `
+      <div class="log-item">
+        <div class="log-date">${fmtShort(l.date)}</div>
+        <div class="log-entry">${esc(l.entry)}</div>
+        <button class="btn-remove" onclick="removeLog('${l.id}')">✕</button>
+      </div>`).join('');
+  }
+}
+
+function updateProductCount(delta) {
+  S.flProducts = Math.max(0, S.flProducts + delta);
+  persist();
+  document.getElementById('fl-product-count').textContent = S.flProducts;
+}
+
+function addFlTask() {
+  const title = document.getElementById('fl-title').value.trim();
+  const date  = document.getElementById('fl-date').value;
+  const type  = document.getElementById('fl-type').value;
+  if (!title) { alert('Please enter a title.'); return; }
+
+  S.flTasks.push({ id:'fl-'+Date.now(), title, isMilestone:type==='milestone', targetDate:date, done:false, notes:'' });
+  S.focus = null; S.focusDate = '';
+  persist();
+  document.getElementById('fl-title').value = '';
+  document.getElementById('fl-date').value  = '';
+  renderLabs();
+}
+
+function toggleFlTask(id) {
+  const t = S.flTasks.find(t => t.id===id);
+  if (t) { t.done = !t.done; S.focus = null; S.focusDate = ''; persist(); renderLabs(); }
+}
+
+function removeFlTask(id) {
+  S.flTasks = S.flTasks.filter(t => t.id!==id);
+  S.focus = null; S.focusDate = '';
+  persist(); renderLabs();
+}
+
+function addLog() {
+  const entry = document.getElementById('fl-log-input').value.trim();
+  if (!entry) return;
+  S.flLog.push({ id:'log-'+Date.now(), date:todayStr(), entry });
+  persist();
+  document.getElementById('fl-log-input').value = '';
+  renderLabs();
+}
+
+function removeLog(id) {
+  S.flLog = S.flLog.filter(l => l.id!==id);
+  persist(); renderLabs();
+}
+
+// ─── Academic tasks ───────────────────────────────────────────────────────────
+function addTask() {
+  const title    = document.getElementById('t-title').value.trim();
+  const deadline = document.getElementById('t-deadline').value;
+  const type     = document.getElementById('t-type').value;
+  const course   = document.getElementById('t-course').value.trim();
+  const notes    = document.getElementById('t-notes').value.trim();
+  if (!title)    { alert('Please enter a task name.'); return; }
+  if (!deadline) { alert('Please enter a deadline.'); return; }
+
+  S.tasks.push({ id:'t'+Date.now(), title, deadline, type, course, notes });
+  S.focus = null; S.focusDate = '';
+  persist();
+  document.getElementById('t-title').value = document.getElementById('t-deadline').value = '';
+  document.getElementById('t-course').value = document.getElementById('t-notes').value = '';
+  renderTaskList();
+  renderUpcomingDeadlines();
+}
+
+function removeTask(id) {
+  S.tasks = S.tasks.filter(t => t.id!==id);
+  S.focus = null; S.focusDate = '';
+  persist(); renderTaskList(); renderUpcomingDeadlines();
+}
+
+function renderTaskList() {
+  const el     = document.getElementById('task-list');
+  const sorted = [...S.tasks].sort((a,b) => a.deadline.localeCompare(b.deadline));
+  const TYPE_LABEL = {essay:'Essay','problem-set':'Problem set',reading:'Reading',review:'Review',presentation:'Presentation',other:'Other'};
+
+  if (!sorted.length) { el.innerHTML = `<div class="empty">No tasks yet — add one above.</div>`; return; }
+  el.innerHTML = sorted.map(t => {
+    const days = daysBetween(t.deadline);
+    const col  = days<0 ? 'var(--red)' : days<=3 ? 'var(--red)' : days<=10 ? 'var(--amber)' : 'var(--muted)';
+    const lbl  = days<0 ? 'Overdue' : days===0 ? 'Today' : days===1 ? 'Tomorrow' : `${days}d`;
+    return `
+      <div class="task-item">
+        <div style="flex:1;min-width:0">
+          <div class="task-title">${esc(t.title)}</div>
+          <div class="task-meta">${fmtShort(t.deadline)} · ${TYPE_LABEL[t.type]||t.type}${t.course?' · '+esc(t.course):''}</div>
+        </div>
+        <div class="task-right">
+          <span style="font-size:12px;font-weight:600;color:${col}">${lbl}</span>
+          <button class="btn-remove" onclick="removeTask('${t.id}')">✕</button>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+// ─── Sticky note ──────────────────────────────────────────────────────────────
+function addStickyNote() {
+  const el   = document.getElementById('sticky-input');
+  const text = el.value.trim();
+  if (!text) return;
+  S.sticky.push({ id: 'sn-' + Date.now(), text, done: false, doneAt: null });
+  persist();
+  el.value = '';
+  renderStickyNote();
+}
+
+function toggleSticky(id) {
+  const item = S.sticky.find(n => n.id === id);
+  if (!item) return;
+  item.done   = !item.done;
+  item.doneAt = item.done ? Date.now() : null;
+  persist();
+  renderStickyNote();
+}
+
+function renderStickyNote() {
+  // Prune items ticked more than 24 h ago
+  const cutoff = Date.now() - 86400000;
+  S.sticky = S.sticky.filter(n => !(n.done && n.doneAt && n.doneAt < cutoff));
+  persist();
+
+  const el = document.getElementById('sticky-list');
+  if (!S.sticky.length) { el.innerHTML = ''; return; }
+  el.innerHTML = S.sticky.map(n => `
+    <div class="sticky-item">
+      <div class="sticky-cb ${n.done?'ticked':''}" onclick="toggleSticky('${n.id}')"></div>
+      <span class="sticky-text ${n.done?'ticked':''}">${esc(n.text)}</span>
+    </div>`).join('');
+}
+
+// ─── Utility ──────────────────────────────────────────────────────────────────
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ─── Boot ─────────────────────────────────────────────────────────────────────
+document.getElementById('date-display').textContent = fmtLong();
+renderSchedule();
+renderUpcomingDeadlines();
+renderCompletionLog();
+renderStickyNote();
+document.getElementById('sticky-note').style.display = '';
+
+if (!S.apiKey) {
+  document.getElementById('setup-card').style.display = '';
+} else {
+  generateFocus();
+}
+
+// ─── PWA: service worker registration ────────────────────────────────────────
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
+  });
+}
+
+// ─── PWA: install prompt ──────────────────────────────────────────────────────
+let _installPrompt = null;
+
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  _installPrompt = e;
+  document.getElementById('install-btn').style.display = '';
+});
+
+window.addEventListener('appinstalled', () => {
+  document.getElementById('install-btn').style.display = 'none';
+  _installPrompt = null;
+});
+
+function installApp() {
+  if (!_installPrompt) return;
+  _installPrompt.prompt();
+  _installPrompt.userChoice.then(() => {
+    _installPrompt = null;
+    document.getElementById('install-btn').style.display = 'none';
+  });
+}
+</script>
+</body>
+</html>
