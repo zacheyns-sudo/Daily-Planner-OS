@@ -250,6 +250,24 @@ button { font-family: inherit; cursor: pointer; border: none; transition: all 0.
 .slide-in { animation: slideIn 0.25s ease; }
 @keyframes slideIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:none; } }
 
+/* ── Today's tasks ── */
+.today-task-item {
+  display: flex; align-items: flex-start; gap: 11px;
+  padding: 10px 0; border-bottom: 1px solid var(--border); cursor: pointer;
+}
+.today-task-item:last-child { border-bottom: none; }
+.today-task-item:hover .today-task-cb:not(.checked) { border-color: var(--accent); }
+.today-task-cb {
+  width: 18px; height: 18px; border-radius: 5px;
+  border: 2px solid var(--border); flex-shrink: 0; margin-top: 1px;
+  transition: all 0.12s; display: flex; align-items: center; justify-content: center;
+}
+.today-task-cb.checked { background: var(--accent); border-color: var(--accent); }
+.today-task-cb.checked::after { content: '✓'; font-size: 10px; font-weight: 700; color: white; }
+.today-task-label { font-size: 14px; font-weight: 500; transition: color 0.12s; }
+.today-task-item.done .today-task-label { text-decoration: line-through; color: var(--muted); font-weight: 400; }
+.today-task-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
 /* ── Sticky note ── */
 .sticky-note {
   position: fixed;
@@ -367,6 +385,10 @@ button { font-family: inherit; cursor: pointer; border: none; transition: all 0.
       <p class="key-note">Get a key at console.anthropic.com → API keys.</p>
     </div>
     <div id="focus-section"></div>
+    <div class="card">
+      <div class="section-head">Tasks for today</div>
+      <div id="today-tasks"></div>
+    </div>
     <div class="card">
       <div class="section-head">Today's schedule</div>
       <div id="today-schedule"></div>
@@ -647,7 +669,7 @@ function switchTab(tab) {
   if (tab==='deadlines') renderDeadlinesTab();
   if (tab==='labs')      renderLabs();
   if (tab==='tasks')     renderTaskList();
-  if (tab==='today')     renderUpcomingDeadlines();
+  if (tab==='today')     { renderUpcomingDeadlines(); renderTodayTasks(); }
 }
 
 // ─── API key ──────────────────────────────────────────────────────────────────
@@ -1518,9 +1540,73 @@ function esc(s) {
   return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
+// ─── Tasks for today ──────────────────────────────────────────────────────────
+function renderTodayTasks() {
+  const el    = document.getElementById('today-tasks');
+  const today = todayStr();
+  const items = [];
+
+  // Active recurring problem sets
+  getRecurringPS().forEach(p => {
+    items.push({ id: p.id, label: p.name, sub: `Due ${p.due}`, done: S.completedTasks.includes(p.id) });
+  });
+
+  // Lecture reviews recommended today
+  getRecentLectures().forEach(l => {
+    items.push({ id: l.id, label: l.name, sub: 'Review recommended', done: S.completedTasks.includes(l.id) });
+  });
+
+  // Academic tasks due today or tomorrow
+  S.tasks
+    .filter(t => !t.done)
+    .map(t => ({ ...t, days: daysBetween(t.deadline) }))
+    .filter(t => t.days >= 0 && t.days <= 1)
+    .sort((a, b) => a.days - b.days)
+    .forEach(t => {
+      const sub = t.days === 0 ? 'Due today' : 'Due tomorrow';
+      items.push({ id: t.id, label: t.title, sub: `${sub}${t.course ? ' · ' + t.course : ''}`, done: S.completedTasks.includes(t.id) });
+    });
+
+  // Exam today
+  const examToday = EXAMS.find(e => e.date === today);
+  if (examToday) {
+    items.push({ id: examToday.id, label: examToday.title, sub: 'Today — go execute', done: false });
+  }
+
+  if (!items.length) {
+    el.innerHTML = '<div class="empty">Nothing critical today.</div>';
+    return;
+  }
+
+  el.innerHTML = items.map(item => `
+    <div class="today-task-item ${item.done ? 'done' : ''}" onclick="toggleTodayTask('${item.id}')">
+      <div class="today-task-cb ${item.done ? 'checked' : ''}"></div>
+      <div>
+        <div class="today-task-label">${esc(item.label)}</div>
+        <div class="today-task-sub">${esc(item.sub)}</div>
+      </div>
+    </div>`).join('');
+}
+
+function toggleTodayTask(id) {
+  if (S.completedTasks.includes(id)) {
+    S.completedTasks = S.completedTasks.filter(x => x !== id);
+    const t = S.tasks.find(t => t.id === id);
+    if (t) t.done = false;
+  } else {
+    if (!S.completedTasks.includes(id)) S.completedTasks.push(id);
+    const t = S.tasks.find(t => t.id === id);
+    if (t) t.done = true;
+  }
+  persist();
+  renderTodayTasks();
+  renderUpcomingDeadlines();
+}
+
 // ─── Boot ─────────────────────────────────────────────────────────────────────
 document.getElementById('date-display').textContent = fmtLong();
 renderSchedule();
+renderTodayTasks();
 renderUpcomingDeadlines();
 renderCompletionLog();
 renderStickyNote();
