@@ -335,6 +335,50 @@ button { font-family: inherit; cursor: pointer; border: none; transition: all 0.
 .sticky-note input[type="text"]:focus { border-bottom-color: #D97706; }
 .sticky-note input[type="text"]::placeholder { color: #C6A96A; }
 
+/* ── Edit modal ── */
+.modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.35);
+  z-index: 50;
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+}
+.modal-box {
+  position: fixed; top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: 0 8px 40px rgba(0,0,0,0.18);
+  padding: 24px;
+  width: min(400px, calc(100vw - 32px));
+  z-index: 51;
+  animation: slideIn 0.18s ease;
+}
+.modal-title { font-size: 15px; font-weight: 600; margin-bottom: 18px; letter-spacing: -0.2px; }
+.modal-actions { display: flex; align-items: center; justify-content: space-between; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border); gap: 8px; }
+.modal-actions-right { display: flex; gap: 8px; }
+.cancelled-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; }
+.cancelled-row label { font-size: 13px; color: var(--text); margin: 0; font-weight: 400; cursor: pointer; }
+.toggle-wrap { position: relative; width: 36px; height: 20px; flex-shrink: 0; }
+.toggle-wrap input { opacity: 0; width: 0; height: 0; position: absolute; }
+.toggle-track {
+  position: absolute; inset: 0; border-radius: 20px;
+  background: var(--border); cursor: pointer; transition: background 0.15s;
+}
+.toggle-track::after {
+  content: ''; position: absolute; width: 14px; height: 14px;
+  border-radius: 50%; background: white; top: 3px; left: 3px;
+  transition: transform 0.15s; box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+.toggle-wrap input:checked + .toggle-track { background: var(--red); }
+.toggle-wrap input:checked + .toggle-track::after { transform: translateX(16px); }
+
+/* Cancelled event styles */
+.sched-item.cancelled .sched-time,
+.sched-item.cancelled .sched-name { color: var(--muted); text-decoration: line-through; }
+.cal-detail-row.cancelled { color: var(--muted); text-decoration: line-through; }
+.edit-hint { font-size: 11px; color: var(--muted); margin-left: auto; opacity: 0.6; }
+
 /* ── Install button ── */
 .btn-install {
   font-size: 12px;
@@ -560,6 +604,49 @@ button { font-family: inherit; cursor: pointer; border: none; transition: all 0.
 
 </main>
 
+<div id="edit-modal" style="display:none" role="dialog" aria-modal="true">
+  <div class="modal-overlay" onclick="closeEditModal()"></div>
+  <div class="modal-box">
+    <div class="modal-title">Edit event</div>
+    <div class="form-group">
+      <label for="em-name">Event name</label>
+      <input type="text" id="em-name">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label for="em-start">Start time</label>
+        <input type="text" id="em-start" placeholder="e.g. 12:15">
+      </div>
+      <div class="form-group">
+        <label for="em-end">End time (optional)</label>
+        <input type="text" id="em-end" placeholder="e.g. 14:00">
+      </div>
+    </div>
+    <div class="form-group">
+      <label for="em-category">Category</label>
+      <select id="em-category">
+        <option value="class">Class / Lecture / PBL</option>
+        <option value="sport">Sport / Fitness</option>
+        <option value="other">Other</option>
+      </select>
+    </div>
+    <div class="cancelled-row">
+      <label class="toggle-wrap">
+        <input type="checkbox" id="em-cancelled">
+        <span class="toggle-track"></span>
+      </label>
+      <label for="em-cancelled">Mark as cancelled</label>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-ghost" onclick="resetEventToDefault()">Reset to default</button>
+      <div class="modal-actions-right">
+        <button class="btn-ghost" onclick="closeEditModal()">Cancel</button>
+        <button class="btn-primary" onclick="saveEventEdit()">Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div id="sticky-note" class="sticky-note" style="display:none">
   <div class="sticky-header">
     <span class="sticky-title">Quick notes</span>
@@ -621,9 +708,10 @@ const S = {
   focus:         JSON.parse(localStorage.getItem('org_focus')     || 'null'),
   focusDate:     localStorage.getItem('org_focusDate')    || '',
   focusWindow:   localStorage.getItem('org_focusWindow')  || '',
-  completedLog:   JSON.parse(localStorage.getItem('org_completed')     || '[]'),
-  completedTasks: JSON.parse(localStorage.getItem('org_completed_ids') || '[]'),
-  sticky:         JSON.parse(localStorage.getItem('org_sticky')        || '[]'),
+  completedLog:   JSON.parse(localStorage.getItem('org_completed')      || '[]'),
+  completedTasks: JSON.parse(localStorage.getItem('org_completed_ids')  || '[]'),
+  sticky:         JSON.parse(localStorage.getItem('org_sticky')         || '[]'),
+  scheduleEdits:  JSON.parse(localStorage.getItem('org_schedule_edits') || '{}'),
 };
 
 function persist() {
@@ -636,7 +724,8 @@ function persist() {
   localStorage.setItem('org_focusWindow', S.focusWindow);
   localStorage.setItem('org_completed',     JSON.stringify(S.completedLog));
   localStorage.setItem('org_completed_ids', JSON.stringify(S.completedTasks));
-  localStorage.setItem('org_sticky',      JSON.stringify(S.sticky));
+  localStorage.setItem('org_sticky',         JSON.stringify(S.sticky));
+  localStorage.setItem('org_schedule_edits', JSON.stringify(S.scheduleEdits));
   if (S.apiKey) localStorage.setItem('org_key', S.apiKey);
 }
 
@@ -644,6 +733,27 @@ function persist() {
 let calYear     = new Date().getFullYear();
 let calMonth    = new Date().getMonth();
 let calSelected = null;
+
+// ─── Schedule edit state ──────────────────────────────────────────────────────
+let _editingSlot = null; // { dow, index }
+
+// Returns the effective slot list for a given day-of-week, with overrides applied.
+// Cancelled slots are included (callers can filter with .filter(s => !s.cancelled)).
+function getEffectiveSlots(dow) {
+  return WEEKLY[dow].slots.map((slot, i) => {
+    const ov = S.scheduleEdits[`${dow}-${i}`];
+    if (!ov) return { ...slot, index: i, cancelled: false };
+    return { ...slot, ...ov, index: i };
+  });
+}
+
+// Infer a category from a slot name (used when no override exists).
+function slotCategory(name) {
+  const n = name.toLowerCase();
+  if (n.includes('polo') || n.includes('hyrox')) return 'sport';
+  if (n.includes('lecture') || n.includes('pbl') || n.includes('class')) return 'class';
+  return 'other';
+}
 
 // ─── Date helpers ─────────────────────────────────────────────────────────────
 function todayStr() { return new Date().toISOString().split('T')[0]; }
@@ -855,8 +965,9 @@ function buildPrompt() {
   const fmtFL   = t =>
     `  • [id:${t.id}] "${t.title}" | ${t.isMilestone?'milestone':'task'}${t.targetDate?' | target '+fmtShort(t.targetDate)+' ('+t.days+'d)':''}`;
 
-  const schedLines = sched.slots.length
-    ? sched.slots.map(s => `  ${s.t}: ${s.n}`).join('\n')
+  const activeSlots = getEffectiveSlots(dow).filter(s => !s.cancelled);
+  const schedLines = activeSlots.length
+    ? activeSlots.map(s => `  ${s.t}: ${s.n}`).join('\n')
     : '  None — open day.';
 
   const flSection = !urgentAcademic && flPending.length
@@ -869,7 +980,7 @@ ${flPending.map(fmtFL).join('\n')}`
   return `You are a calm, practical academic organiser. Recommend exactly ONE task.
 
 TODAY: ${fmtLong()} — ${sched.label}
-Schedule: ${sched.slots.length ? sched.slots.map(s=>s.n).join(', ') : 'completely free'}
+Schedule: ${activeSlots.length ? activeSlots.map(s=>s.n).join(', ') : 'completely free'}
 ${schedLines}
 Note: ${sched.note}
 
@@ -1096,21 +1207,24 @@ function renderCompletionLog() {
 
 // ─── Today's schedule ─────────────────────────────────────────────────────────
 function renderSchedule() {
-  const dow   = new Date().getDay();
-  const sched = WEEKLY[dow];
-  const el    = document.getElementById('today-schedule');
+  const dow    = new Date().getDay();
+  const sched  = WEEKLY[dow];
+  const el     = document.getElementById('today-schedule');
+  const slots  = getEffectiveSlots(dow);
+  const active = slots.filter(s => !s.cancelled);
 
-  if (!sched.slots.length) {
+  if (!slots.length) {
     el.innerHTML = `<div class="sched-note" style="padding:2px 0">${esc(sched.note)}</div>`;
     return;
   }
-  const banner = dow === 1
+  const banner = dow === 1 && active.length >= 3
     ? `<div style="background:var(--amber-bg);color:var(--amber);border-radius:8px;padding:9px 12px;font-size:13px;font-weight:500;margin-bottom:12px">⚠️ Heavy day — back-to-back lectures then Portuguese until 19:00. Your only study window is this morning.</div>`
     : '';
-  el.innerHTML = banner + sched.slots.map(s => `
-    <div class="sched-item">
+  el.innerHTML = banner + slots.map(s => `
+    <div class="sched-item${s.cancelled?' cancelled':''}" onclick="openEditModal(${dow},${s.index})" style="cursor:pointer">
       <span class="sched-time">${esc(s.t)}</span>
       <span class="sched-name">${esc(s.n)}</span>
+      <span class="edit-hint">edit</span>
     </div>`).join('') + `<div class="sched-note">${esc(sched.note)}</div>`;
 }
 
@@ -1288,11 +1402,11 @@ function renderCalendar() {
 
 function computeDots(ds, dow, dlMap) {
   const dots  = [];
-  const sched = WEEKLY[dow];
+  const slots = getEffectiveSlots(dow).filter(s => !s.cancelled);
 
-  const isSport = s => s.n.toLowerCase().includes('polo') || s.n.toLowerCase().includes('hyrox');
-  if (sched?.slots.some(isSport))  dots.push('sport');
-  if (sched?.slots.some(s => !isSport(s))) dots.push('class');
+  const isSport = s => (s.category || slotCategory(s.n)) === 'sport';
+  if (slots.some(isSport))        dots.push('sport');
+  if (slots.some(s => !isSport(s))) dots.push('class');
 
   const dls      = dlMap[ds] || [];
   const academic = dls.filter(t => !t.isFL);
@@ -1317,9 +1431,10 @@ function renderCalDetail() {
   const el = document.getElementById('cal-detail');
   if (!calSelected) { el.innerHTML = ''; return; }
 
-  const d    = new Date(calSelected + 'T00:00:00');
-  const dow  = d.getDay();
-  const sched = WEEKLY[dow];
+  const d      = new Date(calSelected + 'T00:00:00');
+  const dow    = d.getDay();
+  const sched  = WEEKLY[dow];
+  const slots  = getEffectiveSlots(dow);
 
   const dls = [
     ...S.tasks.map(t => ({ ...t, isFL:false, isExam:false })).filter(t => t.deadline === calSelected),
@@ -1331,8 +1446,13 @@ function renderCalDetail() {
 
   // Schedule
   html += `<div class="cal-detail-section"><div class="cal-detail-label">Schedule</div>`;
-  if (sched?.slots.length) {
-    html += sched.slots.map(s => `<div class="cal-detail-row">${esc(s.t)} — ${esc(s.n)}</div>`).join('');
+  if (slots.length) {
+    html += slots.map(s => `
+      <div class="cal-detail-row${s.cancelled?' cancelled':''}" style="cursor:pointer;display:flex;align-items:center;gap:6px" onclick="openEditModal(${dow},${s.index})">
+        <span style="flex:1">${esc(s.t)} — ${esc(s.n)}</span>
+        ${s.cancelled ? `<span class="badge b-grey" style="font-size:10px;padding:1px 7px">Cancelled</span>` : ''}
+        <span class="edit-hint">edit</span>
+      </div>`).join('');
   } else {
     html += `<div class="cal-detail-row" style="color:var(--muted)">${esc(sched?.note||'No commitments.')}</div>`;
   }
@@ -1539,6 +1659,65 @@ function renderStickyNote() {
 function esc(s) {
   return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
+
+// ─── Schedule edit modal ──────────────────────────────────────────────────────
+function openEditModal(dow, index) {
+  _editingSlot = { dow, index };
+  const base = WEEKLY[dow].slots[index];
+  const ov   = S.scheduleEdits[`${dow}-${index}`] || {};
+  const slot = { ...base, ...ov };
+
+  const parts = (slot.t || '').split('–');
+  document.getElementById('em-name').value      = slot.n || '';
+  document.getElementById('em-start').value     = (parts[0] || '').trim();
+  document.getElementById('em-end').value       = (parts[1] || '').trim();
+  document.getElementById('em-cancelled').checked = !!ov.cancelled;
+  document.getElementById('em-category').value  = ov.category || slotCategory(base.n);
+  document.getElementById('edit-modal').style.display = '';
+  document.getElementById('em-name').focus();
+}
+
+function closeEditModal() {
+  document.getElementById('edit-modal').style.display = 'none';
+  _editingSlot = null;
+}
+
+function saveEventEdit() {
+  if (!_editingSlot) return;
+  const { dow, index } = _editingSlot;
+  const name      = document.getElementById('em-name').value.trim();
+  const start     = document.getElementById('em-start').value.trim();
+  const end       = document.getElementById('em-end').value.trim();
+  const cancelled = document.getElementById('em-cancelled').checked;
+  const category  = document.getElementById('em-category').value;
+  if (!name) { document.getElementById('em-name').focus(); return; }
+
+  S.scheduleEdits[`${dow}-${index}`] = {
+    n: name,
+    t: end ? `${start}–${end}` : start,
+    cancelled,
+    category,
+  };
+  persist();
+  closeEditModal();
+  renderSchedule();
+  renderCalendar();
+}
+
+function resetEventToDefault() {
+  if (!_editingSlot) return;
+  const { dow, index } = _editingSlot;
+  delete S.scheduleEdits[`${dow}-${index}`];
+  persist();
+  closeEditModal();
+  renderSchedule();
+  renderCalendar();
+}
+
+// Close modal on Escape
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeEditModal();
+});
 
 // ─── Tasks for today ──────────────────────────────────────────────────────────
 function renderTodayTasks() {
