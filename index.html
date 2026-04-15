@@ -378,6 +378,13 @@ button { font-family: inherit; cursor: pointer; border: none; transition: all 0.
 .sched-item.cancelled .sched-name { color: var(--muted); text-decoration: line-through; }
 .cal-detail-row.cancelled { color: var(--muted); text-decoration: line-through; }
 .edit-hint { font-size: 11px; color: var(--muted); margin-left: auto; opacity: 0.6; }
+.scope-section { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); }
+.scope-label { font-size: 12px; font-weight: 500; color: var(--muted); margin-bottom: 8px; display: block; }
+.scope-options { display: flex; flex-direction: column; gap: 7px; }
+.scope-opt { display: flex; align-items: flex-start; gap: 9px; cursor: pointer; }
+.scope-opt input[type="radio"] { margin-top: 2px; accent-color: var(--accent); flex-shrink: 0; cursor: pointer; }
+.scope-opt-text { font-size: 13px; color: var(--text); line-height: 1.3; }
+.scope-opt-sub { font-size: 11px; color: var(--muted); margin-top: 1px; }
 
 /* ── Install button ── */
 .btn-install {
@@ -637,6 +644,19 @@ button { font-family: inherit; cursor: pointer; border: none; transition: all 0.
       </label>
       <label for="em-cancelled">Mark as cancelled</label>
     </div>
+    <div class="scope-section">
+      <span class="scope-label">Apply to</span>
+      <div class="scope-options">
+        <label class="scope-opt">
+          <input type="radio" name="em-scope" value="date" id="em-scope-date">
+          <div><div class="scope-opt-text">This date only</div><div class="scope-opt-sub">Returns to normal the following week</div></div>
+        </label>
+        <label class="scope-opt">
+          <input type="radio" name="em-scope" value="perm" id="em-scope-perm" checked>
+          <div><div class="scope-opt-text">All future weeks</div><div class="scope-opt-sub">Permanent change</div></div>
+        </label>
+      </div>
+    </div>
     <div class="modal-actions">
       <button class="btn-ghost" onclick="resetEventToDefault()">Reset to default</button>
       <div class="modal-actions-right">
@@ -735,13 +755,16 @@ let calMonth    = new Date().getMonth();
 let calSelected = null;
 
 // ─── Schedule edit state ──────────────────────────────────────────────────────
-let _editingSlot = null; // { dow, index }
+let _editingSlot = null; // { dow, index, dateStr }
 
 // Returns the effective slot list for a given day-of-week, with overrides applied.
+// dateStr (YYYY-MM-DD) is optional — date-specific overrides take priority over permanent ones.
 // Cancelled slots are included (callers can filter with .filter(s => !s.cancelled)).
-function getEffectiveSlots(dow) {
+function getEffectiveSlots(dow, dateStr) {
   return WEEKLY[dow].slots.map((slot, i) => {
-    const ov = S.scheduleEdits[`${dow}-${i}`];
+    const dateKey = dateStr ? `date-${dateStr}-${dow}-${i}` : null;
+    const permKey = `${dow}-${i}`;
+    const ov = (dateKey && S.scheduleEdits[dateKey]) || S.scheduleEdits[permKey] || null;
     if (!ov) return { ...slot, index: i, cancelled: false };
     return { ...slot, ...ov, index: i };
   });
@@ -965,7 +988,7 @@ function buildPrompt() {
   const fmtFL   = t =>
     `  • [id:${t.id}] "${t.title}" | ${t.isMilestone?'milestone':'task'}${t.targetDate?' | target '+fmtShort(t.targetDate)+' ('+t.days+'d)':''}`;
 
-  const activeSlots = getEffectiveSlots(dow).filter(s => !s.cancelled);
+  const activeSlots = getEffectiveSlots(dow, todayStr()).filter(s => !s.cancelled);
   const schedLines = activeSlots.length
     ? activeSlots.map(s => `  ${s.t}: ${s.n}`).join('\n')
     : '  None — open day.';
@@ -1210,7 +1233,8 @@ function renderSchedule() {
   const dow    = new Date().getDay();
   const sched  = WEEKLY[dow];
   const el     = document.getElementById('today-schedule');
-  const slots  = getEffectiveSlots(dow);
+  const ds     = todayStr();
+  const slots  = getEffectiveSlots(dow, ds);
   const active = slots.filter(s => !s.cancelled);
 
   if (!slots.length) {
@@ -1221,7 +1245,7 @@ function renderSchedule() {
     ? `<div style="background:var(--amber-bg);color:var(--amber);border-radius:8px;padding:9px 12px;font-size:13px;font-weight:500;margin-bottom:12px">⚠️ Heavy day — back-to-back lectures then Portuguese until 19:00. Your only study window is this morning.</div>`
     : '';
   el.innerHTML = banner + slots.map(s => `
-    <div class="sched-item${s.cancelled?' cancelled':''}" onclick="openEditModal(${dow},${s.index})" style="cursor:pointer">
+    <div class="sched-item${s.cancelled?' cancelled':''}" onclick="openEditModal(${dow},${s.index},'${ds}')" style="cursor:pointer">
       <span class="sched-time">${esc(s.t)}</span>
       <span class="sched-name">${esc(s.n)}</span>
       <span class="edit-hint">edit</span>
@@ -1402,7 +1426,7 @@ function renderCalendar() {
 
 function computeDots(ds, dow, dlMap) {
   const dots  = [];
-  const slots = getEffectiveSlots(dow).filter(s => !s.cancelled);
+  const slots = getEffectiveSlots(dow, ds).filter(s => !s.cancelled);
 
   const isSport = s => (s.category || slotCategory(s.n)) === 'sport';
   if (slots.some(isSport))        dots.push('sport');
@@ -1434,7 +1458,7 @@ function renderCalDetail() {
   const d      = new Date(calSelected + 'T00:00:00');
   const dow    = d.getDay();
   const sched  = WEEKLY[dow];
-  const slots  = getEffectiveSlots(dow);
+  const slots  = getEffectiveSlots(dow, calSelected);
 
   const dls = [
     ...S.tasks.map(t => ({ ...t, isFL:false, isExam:false })).filter(t => t.deadline === calSelected),
@@ -1448,7 +1472,7 @@ function renderCalDetail() {
   html += `<div class="cal-detail-section"><div class="cal-detail-label">Schedule</div>`;
   if (slots.length) {
     html += slots.map(s => `
-      <div class="cal-detail-row${s.cancelled?' cancelled':''}" style="cursor:pointer;display:flex;align-items:center;gap:6px" onclick="openEditModal(${dow},${s.index})">
+      <div class="cal-detail-row${s.cancelled?' cancelled':''}" style="cursor:pointer;display:flex;align-items:center;gap:6px" onclick="openEditModal(${dow},${s.index},'${calSelected}')">
         <span style="flex:1">${esc(s.t)} — ${esc(s.n)}</span>
         ${s.cancelled ? `<span class="badge b-grey" style="font-size:10px;padding:1px 7px">Cancelled</span>` : ''}
         <span class="edit-hint">edit</span>
@@ -1661,18 +1685,26 @@ function esc(s) {
 }
 
 // ─── Schedule edit modal ──────────────────────────────────────────────────────
-function openEditModal(dow, index) {
-  _editingSlot = { dow, index };
-  const base = WEEKLY[dow].slots[index];
-  const ov   = S.scheduleEdits[`${dow}-${index}`] || {};
+function openEditModal(dow, index, dateStr) {
+  _editingSlot = { dow, index, dateStr: dateStr || null };
+  const base    = WEEKLY[dow].slots[index];
+  const dateKey = dateStr ? `date-${dateStr}-${dow}-${index}` : null;
+  const permKey = `${dow}-${index}`;
+  // Show the most-specific existing override in the fields
+  const ov = (dateKey && S.scheduleEdits[dateKey]) || S.scheduleEdits[permKey] || {};
   const slot = { ...base, ...ov };
 
   const parts = (slot.t || '').split('–');
-  document.getElementById('em-name').value      = slot.n || '';
-  document.getElementById('em-start').value     = (parts[0] || '').trim();
-  document.getElementById('em-end').value       = (parts[1] || '').trim();
-  document.getElementById('em-cancelled').checked = !!ov.cancelled;
-  document.getElementById('em-category').value  = ov.category || slotCategory(base.n);
+  document.getElementById('em-name').value         = slot.n || '';
+  document.getElementById('em-start').value        = (parts[0] || '').trim();
+  document.getElementById('em-end').value          = (parts[1] || '').trim();
+  document.getElementById('em-cancelled').checked  = !!ov.cancelled;
+  document.getElementById('em-category').value     = ov.category || slotCategory(base.n);
+
+  // Pre-select scope: if a date-specific override already exists, default to "date"
+  const hasDateOv = !!(dateKey && S.scheduleEdits[dateKey]);
+  document.getElementById(hasDateOv ? 'em-scope-date' : 'em-scope-perm').checked = true;
+
   document.getElementById('edit-modal').style.display = '';
   document.getElementById('em-name').focus();
 }
@@ -1684,15 +1716,17 @@ function closeEditModal() {
 
 function saveEventEdit() {
   if (!_editingSlot) return;
-  const { dow, index } = _editingSlot;
+  const { dow, index, dateStr } = _editingSlot;
   const name      = document.getElementById('em-name').value.trim();
   const start     = document.getElementById('em-start').value.trim();
   const end       = document.getElementById('em-end').value.trim();
   const cancelled = document.getElementById('em-cancelled').checked;
   const category  = document.getElementById('em-category').value;
+  const scope     = document.querySelector('input[name="em-scope"]:checked').value;
   if (!name) { document.getElementById('em-name').focus(); return; }
 
-  S.scheduleEdits[`${dow}-${index}`] = {
+  const key = (scope === 'date' && dateStr) ? `date-${dateStr}-${dow}-${index}` : `${dow}-${index}`;
+  S.scheduleEdits[key] = {
     n: name,
     t: end ? `${start}–${end}` : start,
     cancelled,
@@ -1706,8 +1740,16 @@ function saveEventEdit() {
 
 function resetEventToDefault() {
   if (!_editingSlot) return;
-  const { dow, index } = _editingSlot;
-  delete S.scheduleEdits[`${dow}-${index}`];
+  const { dow, index, dateStr } = _editingSlot;
+  const scope = document.querySelector('input[name="em-scope"]:checked').value;
+  if (scope === 'date' && dateStr) {
+    delete S.scheduleEdits[`date-${dateStr}-${dow}-${index}`];
+  } else {
+    // Remove both permanent and any date-specific overrides for this slot
+    delete S.scheduleEdits[`${dow}-${index}`];
+    // Also clear any date-specific override for the currently viewed date
+    if (dateStr) delete S.scheduleEdits[`date-${dateStr}-${dow}-${index}`];
+  }
   persist();
   closeEditModal();
   renderSchedule();
