@@ -269,6 +269,18 @@ button { font-family: inherit; cursor: pointer; border: none; transition: all 0.
 .today-task-label { font-size: 14px; font-weight: 500; transition: color 0.12s; }
 .today-task-item.done .today-task-label { text-decoration: line-through; color: var(--muted); font-weight: 400; }
 .today-task-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.today-event-item {
+  display: flex; align-items: flex-start; gap: 11px;
+  padding: 10px 0; border-bottom: 1px solid var(--border);
+}
+.today-event-item:last-child { border-bottom: none; }
+.today-event-dot {
+  width: 18px; height: 18px; border-radius: 50%; flex-shrink: 0; margin-top: 1px;
+  background: var(--event); display: flex; align-items: center; justify-content: center;
+  font-size: 9px; color: white; font-weight: 700;
+}
+.today-event-label { font-size: 14px; font-weight: 500; color: var(--event); }
+.today-event-sub   { font-size: 12px; color: var(--muted); margin-top: 2px; }
 
 /* ── Sticky note ── */
 .sticky-note {
@@ -1041,6 +1053,20 @@ Pending tasks:
 ${flPending.map(fmtFL).join('\n')}`
     : `FILTHY LABS: Do not recommend today — academic work is pending or urgent.`;
 
+  // Upcoming personal events in the next 10 days — these act as effective deadline cutoffs
+  const upcomingEvents = S.events
+    .map(ev => ({ ...ev, days: daysBetween(ev.date) }))
+    .filter(ev => ev.days >= 0 && ev.days <= 10)
+    .sort((a,b) => a.days - b.days);
+  const eventsSection = upcomingEvents.length
+    ? `PERSONAL EVENTS (next 10 days — treat each as an effective work cutoff):
+${upcomingEvents.map(ev => {
+  const when = ev.days === 0 ? 'TODAY' : ev.days === 1 ? 'TOMORROW' : `in ${ev.days} days (${fmtShort(ev.date)})`;
+  return `  • ${EV_CATEGORY_LABEL[ev.category]||ev.category}: "${ev.title}" — ${when}${ev.notes?' | '+ev.notes:''}`;
+}).join('\n')}
+→ Any academic task due ON or AFTER an event should be treated as due the day BEFORE the event.`
+    : 'PERSONAL EVENTS: None in the next 10 days.';
+
   return `You are a calm, practical academic organiser. Recommend exactly ONE task.
 
 TODAY: ${fmtLong()} — ${sched.label}
@@ -1082,6 +1108,8 @@ ${tier5.length ? tier5.map(fmtTask).join('\n') : '  (none)'}
 
 ${flSection}
 
+${eventsSection}
+
 ════ RULES ════
 0. If Tier EXAM-CRITICAL is active → recommend ONLY exam revision for the nearest exam. Ignore all other tiers.
 1. If Tier 0 is active (and no exam within 7 days) → recommend ONLY that recurring PS.
@@ -1094,6 +1122,7 @@ ${flSection}
 8. Sunday: recommend rest unless Tier EXAM-CRITICAL or Tier 1 is non-empty.
 9. Econometrics lecture review and problem set prep are scheduled Tuesday mornings only — the lecture is on Monday.
 10. Match the time estimate to today's real free windows.
+11. PERSONAL EVENTS: If a personal event falls today — acknowledge it and only recommend something workable around it. If an event is tomorrow or within a few days, treat it as an effective deadline: any work due on or after that event should be prioritised NOW so it is done before the event. Mention the event in your reason.`
 
 Respond with ONLY valid JSON, no markdown fences, no extra text:
 {
@@ -1688,6 +1717,8 @@ function addPersonalEvent() {
   if (!date)  { document.getElementById('ev-date').focus();  return; }
 
   S.events.push({ id: 'ev' + Date.now(), title, date, category, notes });
+  // Bust the focus cache so the next generation accounts for this event
+  S.focus = null; S.focusDate = '';
   persist();
   document.getElementById('ev-title').value = '';
   document.getElementById('ev-date').value  = '';
@@ -1699,6 +1730,8 @@ function addPersonalEvent() {
 
 function removePersonalEvent(id) {
   S.events = S.events.filter(e => e.id !== id);
+  // Bust the focus cache so removal is reflected in the next generation
+  S.focus = null; S.focusDate = '';
   persist();
   renderEventList();
   renderUpcomingDeadlines();
@@ -1926,12 +1959,18 @@ function renderTodayTasks() {
     items.push({ id: examToday.id, label: examToday.title, sub: 'Today — go execute', done: false });
   }
 
-  if (!items.length) {
+  // Personal events today and tomorrow (non-checkable info rows)
+  const tomorrow = (() => { const d = new Date(); d.setDate(d.getDate()+1); return d.toISOString().split('T')[0]; })();
+  const eventsNear = S.events
+    .filter(ev => ev.date === today || ev.date === tomorrow)
+    .sort((a,b) => a.date.localeCompare(b.date));
+
+  if (!items.length && !eventsNear.length) {
     el.innerHTML = '<div class="empty">Nothing critical today.</div>';
     return;
   }
 
-  el.innerHTML = items.map(item => `
+  const taskHtml = items.map(item => `
     <div class="today-task-item ${item.done ? 'done' : ''}" onclick="toggleTodayTask('${item.id}')">
       <div class="today-task-cb ${item.done ? 'checked' : ''}"></div>
       <div>
@@ -1939,6 +1978,21 @@ function renderTodayTasks() {
         <div class="today-task-sub">${esc(item.sub)}</div>
       </div>
     </div>`).join('');
+
+  const eventHtml = eventsNear.map(ev => {
+    const isToday = ev.date === today;
+    const sub = (isToday ? 'Today' : 'Tomorrow') + ' · ' + (EV_CATEGORY_LABEL[ev.category] || ev.category) + (ev.notes ? ' · ' + esc(ev.notes) : '');
+    return `
+    <div class="today-event-item">
+      <div class="today-event-dot">${isToday ? '!' : '→'}</div>
+      <div>
+        <div class="today-event-label">${esc(ev.title)}</div>
+        <div class="today-event-sub">${sub}</div>
+      </div>
+    </div>`;
+  }).join('');
+
+  el.innerHTML = taskHtml + eventHtml;
 }
 
 function toggleTodayTask(id) {
