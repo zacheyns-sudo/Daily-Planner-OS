@@ -32,6 +32,7 @@
   --blue:      #2563EB;
   --teal:      #0D9488;
   --exam:      #C2410C;
+  --event:     #D97706;
   --radius:    14px;
   --shadow:    0 1px 2px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.05);
 }
@@ -183,6 +184,7 @@ button { font-family: inherit; cursor: pointer; border: none; transition: all 0.
 .dot-ok     { background: var(--accent); }
 .dot-fl     { background: var(--purple); }
 .dot-exam   { background: var(--exam);   }
+.dot-event  { background: var(--event);  }
 
 /* Calendar day detail */
 .cal-detail { margin-top: 16px; border-top: 1px solid var(--border); padding-top: 16px; animation: slideIn 0.2s ease; }
@@ -478,6 +480,7 @@ button { font-family: inherit; cursor: pointer; border: none; transition: all 0.
         <span class="cal-legend-item"><span class="cal-dot dot-ok"      style="width:8px;height:8px"></span>Deadline</span>
         <span class="cal-legend-item"><span class="cal-dot dot-fl"      style="width:8px;height:8px"></span>Labs milestone</span>
         <span class="cal-legend-item"><span class="cal-dot dot-exam"    style="width:8px;height:8px"></span>Exam</span>
+        <span class="cal-legend-item"><span class="cal-dot dot-event"   style="width:8px;height:8px"></span>Personal event</span>
       </div>
     </div>
   </div>
@@ -495,6 +498,10 @@ button { font-family: inherit; cursor: pointer; border: none; transition: all 0.
     <div class="card">
       <div class="section-head" style="margin-bottom:4px">Filthy Labs milestones</div>
       <div id="dl-labs"></div>
+    </div>
+    <div class="card">
+      <div class="section-head" style="margin-bottom:4px">Personal events</div>
+      <div id="dl-events"></div>
     </div>
   </div>
 
@@ -569,6 +576,38 @@ button { font-family: inherit; cursor: pointer; border: none; transition: all 0.
 
   <!-- ══ TASKS (ACADEMIC) ══ -->
   <div id="tab-tasks" style="display:none">
+    <div class="card">
+      <div class="section-head" style="margin-bottom:14px">Add personal event</div>
+      <div class="form-group">
+        <label>Event name</label>
+        <input type="text" id="ev-title" placeholder="e.g. Cape Town Cycle Tour">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Date</label>
+          <input type="date" id="ev-date">
+        </div>
+        <div class="form-group">
+          <label>Category</label>
+          <select id="ev-category">
+            <option value="race">Race / Competition</option>
+            <option value="travel">Travel / Flight</option>
+            <option value="social">Social</option>
+            <option value="appointment">Appointment</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Notes (optional)</label>
+        <input type="text" id="ev-notes" placeholder="Any extra detail">
+      </div>
+      <button class="btn-primary" onclick="addPersonalEvent()" style="width:100%;margin-top:4px">Add event</button>
+    </div>
+    <div class="card">
+      <div class="section-head" style="margin-bottom:4px">Upcoming personal events</div>
+      <div id="event-list"></div>
+    </div>
     <div class="card">
       <div class="section-head" style="margin-bottom:14px">Add academic task</div>
       <div class="form-group">
@@ -732,6 +771,7 @@ const S = {
   completedTasks: JSON.parse(localStorage.getItem('org_completed_ids')  || '[]'),
   sticky:         JSON.parse(localStorage.getItem('org_sticky')         || '[]'),
   scheduleEdits:  JSON.parse(localStorage.getItem('org_schedule_edits') || '{}'),
+  events:         JSON.parse(localStorage.getItem('org_events')         || '[]'),
 };
 
 function persist() {
@@ -746,6 +786,7 @@ function persist() {
   localStorage.setItem('org_completed_ids', JSON.stringify(S.completedTasks));
   localStorage.setItem('org_sticky',         JSON.stringify(S.sticky));
   localStorage.setItem('org_schedule_edits', JSON.stringify(S.scheduleEdits));
+  localStorage.setItem('org_events',         JSON.stringify(S.events));
   if (S.apiKey) localStorage.setItem('org_key', S.apiKey);
 }
 
@@ -801,7 +842,7 @@ function switchTab(tab) {
   if (tab==='calendar')  renderCalendar();
   if (tab==='deadlines') renderDeadlinesTab();
   if (tab==='labs')      renderLabs();
-  if (tab==='tasks')     renderTaskList();
+  if (tab==='tasks')     { renderEventList(); renderTaskList(); }
   if (tab==='today')     { renderUpcomingDeadlines(); renderTodayTasks(); }
 }
 
@@ -1263,25 +1304,28 @@ function renderUpcomingDeadlines() {
     .map(t => ({ ...t, deadline:t.targetDate, days:daysBetween(t.targetDate), source:'labs' }));
   const exams = EXAMS
     .map(e => ({ ...e, deadline:e.date, days:daysBetween(e.date), source:'exam' }));
+  const events = S.events
+    .map(ev => ({ ...ev, deadline:ev.date, days:daysBetween(ev.date), source:'event' }));
 
-  const list = [...exams, ...academic, ...fl]
+  const list = [...exams, ...academic, ...fl, ...events]
     .filter(t => t.days >= 0 && t.days <= 45)
     .sort((a,b) => a.days - b.days)
-    .slice(0, 8);
+    .slice(0, 10);
 
   if (!list.length) {
     el.innerHTML = `<div class="empty">No upcoming deadlines. Add tasks in the Tasks tab.</div>`;
     return;
   }
   el.innerHTML = list.map(t => {
-    const isExam = t.source === 'exam';
-    const cls = isExam ? 'b-exam' : t.days<=6 ? 'b-red' : t.days<=13 ? 'b-amber' : 'b-green';
+    const isExam  = t.source === 'exam';
+    const isEvent = t.source === 'event';
+    const cls = isExam ? 'b-exam' : isEvent ? 'b-amber' : t.days<=6 ? 'b-red' : t.days<=13 ? 'b-amber' : 'b-green';
     const lbl = t.days===0 ? 'Today' : t.days===1 ? 'Tomorrow' : `${t.days}d`;
-    const sub = isExam ? 'Exam' : t.source==='labs' ? 'Filthy Labs' : t.course;
+    const sub = isExam ? 'Exam' : isEvent ? (EV_CATEGORY_LABEL[t.category]||t.category) : t.source==='labs' ? 'Filthy Labs' : t.course;
     return `
       <div class="dl-item">
         <div>
-          <div class="dl-name" style="${isExam?'font-weight:600':''}">${esc(t.title)}</div>
+          <div class="dl-name" style="${isExam?'font-weight:600':isEvent?'color:var(--event)':''}">${esc(t.title)}</div>
           ${sub ? `<div class="dl-sub">${esc(sub)}</div>` : ''}
         </div>
         <span class="dl-days badge ${cls}">${lbl}</span>
@@ -1358,6 +1402,29 @@ function renderDeadlinesTab() {
         </div>`;
     }).join('');
   }
+
+  // Personal events
+  const evEl  = document.getElementById('dl-events');
+  const evDl  = S.events
+    .map(ev => ({ ...ev, days: daysBetween(ev.date) }))
+    .sort((a,b) => a.days - b.days);
+
+  if (!evDl.length) {
+    evEl.innerHTML = `<div class="empty">No personal events. Add them in the Tasks tab.</div>`;
+  } else {
+    evEl.innerHTML = evDl.map(ev => {
+      const cls = ev.days < 0 ? 'b-grey' : ev.days === 0 ? 'b-amber' : ev.days <= 7 ? 'b-amber' : 'b-green';
+      const lbl = ev.days < 0 ? 'Past' : ev.days === 0 ? 'Today' : ev.days === 1 ? 'Tomorrow' : `${ev.days}d`;
+      return `
+        <div class="dl-item">
+          <div>
+            <div class="dl-name" style="${ev.days<0?'color:var(--muted)':'color:var(--event)'}">${esc(ev.title)}</div>
+            <div class="dl-sub">${fmtShort(ev.date)} · ${EV_CATEGORY_LABEL[ev.category]||ev.category}${ev.notes?' · '+esc(ev.notes):''}</div>
+          </div>
+          <span class="dl-days badge ${cls}">${lbl}</span>
+        </div>`;
+    }).join('');
+  }
 }
 
 // ─── Calendar ─────────────────────────────────────────────────────────────────
@@ -1387,6 +1454,7 @@ function renderCalendar() {
   };
   S.tasks.forEach(t => addToDlMap(t.deadline, { ...t, isFL:false }));
   S.flTasks.filter(t => t.targetDate && !t.done).forEach(t => addToDlMap(t.targetDate, { ...t, isFL:true }));
+  S.events.forEach(ev => addToDlMap(ev.date, { ...ev, isEvent:true }));
 
   let html = '';
 
@@ -1442,6 +1510,7 @@ function computeDots(ds, dow, dlMap) {
   }
   if (fl.length) dots.push('fl');
   if (EXAMS.some(e => e.date === ds)) dots.push('exam');
+  if ((dlMap[ds] || []).some(t => t.isEvent)) dots.push('event');
 
   return [...new Set(dots)].slice(0, 5);
 }
@@ -1492,6 +1561,18 @@ function renderCalDetail() {
       const sub = !t.isFL && !t.isExam && t.course ? ` <span style="color:var(--muted)">(${esc(t.course)})</span>` : '';
       const style = t.isExam ? ' style="font-weight:600;color:var(--exam)"' : '';
       return `<div class="cal-detail-row"${style}>${esc(t.title)}${sub}${src}</div>`;
+    }).join('');
+    html += `</div>`;
+  }
+
+  // Personal events
+  const evOnDay = S.events.filter(ev => ev.date === calSelected);
+  if (evOnDay.length) {
+    html += `<div class="cal-detail-section"><div class="cal-detail-label">Personal events</div>`;
+    html += evOnDay.map(ev => {
+      const catBadge = `<span class="badge b-amber" style="font-size:11px;padding:1px 7px;margin-left:6px">${esc(EV_CATEGORY_LABEL[ev.category]||ev.category)}</span>`;
+      const notes = ev.notes ? ` <span style="color:var(--muted);font-size:12px">${esc(ev.notes)}</span>` : '';
+      return `<div class="cal-detail-row" style="font-weight:500;color:var(--event)">${esc(ev.title)}${notes}${catBadge}</div>`;
     }).join('');
     html += `</div>`;
   }
@@ -1593,6 +1674,57 @@ function addLog() {
 function removeLog(id) {
   S.flLog = S.flLog.filter(l => l.id!==id);
   persist(); renderLabs();
+}
+
+// ─── Personal events ─────────────────────────────────────────────────────────
+const EV_CATEGORY_LABEL = { race:'Race / Competition', travel:'Travel / Flight', social:'Social', appointment:'Appointment', other:'Other' };
+
+function addPersonalEvent() {
+  const title    = document.getElementById('ev-title').value.trim();
+  const date     = document.getElementById('ev-date').value;
+  const category = document.getElementById('ev-category').value;
+  const notes    = document.getElementById('ev-notes').value.trim();
+  if (!title) { document.getElementById('ev-title').focus(); return; }
+  if (!date)  { document.getElementById('ev-date').focus();  return; }
+
+  S.events.push({ id: 'ev' + Date.now(), title, date, category, notes });
+  persist();
+  document.getElementById('ev-title').value = '';
+  document.getElementById('ev-date').value  = '';
+  document.getElementById('ev-notes').value = '';
+  renderEventList();
+  renderUpcomingDeadlines();
+  renderCalendar();
+}
+
+function removePersonalEvent(id) {
+  S.events = S.events.filter(e => e.id !== id);
+  persist();
+  renderEventList();
+  renderUpcomingDeadlines();
+  renderCalendar();
+}
+
+function renderEventList() {
+  const el     = document.getElementById('event-list');
+  const sorted = [...S.events].sort((a,b) => a.date.localeCompare(b.date));
+  if (!sorted.length) { el.innerHTML = `<div class="empty">No personal events yet — add one above.</div>`; return; }
+  el.innerHTML = sorted.map(ev => {
+    const days = daysBetween(ev.date);
+    const col  = days < 0 ? 'var(--muted)' : days === 0 ? 'var(--event)' : days <= 7 ? 'var(--event)' : 'var(--muted)';
+    const lbl  = days < 0 ? 'Past' : days === 0 ? 'Today' : days === 1 ? 'Tomorrow' : `${days}d`;
+    return `
+      <div class="task-item">
+        <div style="flex:1;min-width:0">
+          <div class="task-title">${esc(ev.title)}</div>
+          <div class="task-meta">${fmtShort(ev.date)} · ${EV_CATEGORY_LABEL[ev.category]||ev.category}${ev.notes?' · '+esc(ev.notes):''}</div>
+        </div>
+        <div class="task-right">
+          <span style="font-size:12px;font-weight:600;color:${col}">${lbl}</span>
+          <button class="btn-remove" onclick="removePersonalEvent('${ev.id}')">✕</button>
+        </div>
+      </div>`;
+  }).join('');
 }
 
 // ─── Academic tasks ───────────────────────────────────────────────────────────
@@ -1831,6 +1963,7 @@ renderTodayTasks();
 renderUpcomingDeadlines();
 renderCompletionLog();
 renderStickyNote();
+// event-list is in the Tasks tab — rendered on tab switch, no boot call needed
 document.getElementById('sticky-note').style.display = '';
 
 if (!S.apiKey) {
