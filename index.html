@@ -583,7 +583,7 @@ const WEEKLY = {
   1: { label:'Monday',    slots:[{t:'12:15–14:00',n:'EoC Lecture'},{t:'15:15–17:00',n:'Econometrics Lecture'},{t:'17:00–19:00',n:'Portuguese'}], note:'Heavy day — back-to-back lectures then Portuguese until 19:00. Morning is your only study window.' },
   2: { label:'Tuesday',   slots:[{t:'15:15–17:00',n:'IR Lecture'},{t:'21:50',n:'Water polo'}], note:'Free morning until 15:15 — dedicated window for Econometrics review and problem set prep.' },
   3: { label:'Wednesday', slots:[{t:'12:15–15:00',n:'EoC PBL (problem set due)'},{t:'17:00–18:00',n:'Hyrox'}], note:'EoC problem set due at 12:15. Free morning for final prep.' },
-  4: { label:'Thursday',  slots:[{t:'09:00–11:45',n:'Econometrics PBL (problem set due)'},{t:'12:15–15:00',n:'IR PBL (problem set due)'},{t:'22:15',n:'Water polo'}], note:'Both problem sets due today. Very limited free time — prep should be done by Wednesday.' },
+  4: { label:'Thursday',  slots:[{t:'09:00–11:45',n:'Econometrics PBL (problem set due)'},{t:'12:15–15:00',n:'IR PBL (reading due)'},{t:'22:15',n:'Water polo'}], note:'Econometrics problem set and IR reading both due today. Very limited free time — prep should be done by Wednesday.' },
   5: { label:'Friday',    slots:[], note:'Completely free — best day for deep work.' },
   6: { label:'Saturday',  slots:[{t:'22:00',n:'Water polo match'}], note:'Morning/afternoon free.' },
 };
@@ -686,7 +686,7 @@ function saveApiKey() {
 // Returns the PS(es) that are active right now, based on day + time.
 // EoC PS:         due Wed 12:15 — active from Sun 18:00 through Wed before 12:15
 // Econometrics PS: due Thu 9:00  — active from Mon after 15:15 through Thu before 9:00
-// IR PS:           due Thu 12:15 — active from Tue after 15:15 through Thu before 12:15
+// IR reading:      due Thu 12:15 — active from Tue after 15:15 through Thu before 12:15
 function getRecurringPS() {
   const now  = new Date();
   const dow  = now.getDay();                            // 0=Sun … 6=Sat
@@ -735,7 +735,7 @@ function getRecurringPS() {
   if (irActive) {
     active.push({
       id:   `ps-ir-${todayStr()}`,
-      name: 'International Relations weekly problem set',
+      name: 'International Relations weekly reading',
       due:  'Thursday at 12:15 (start of IR PBL)',
     });
   }
