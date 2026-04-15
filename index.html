@@ -269,18 +269,6 @@ button { font-family: inherit; cursor: pointer; border: none; transition: all 0.
 .today-task-label { font-size: 14px; font-weight: 500; transition: color 0.12s; }
 .today-task-item.done .today-task-label { text-decoration: line-through; color: var(--muted); font-weight: 400; }
 .today-task-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
-.today-event-item {
-  display: flex; align-items: flex-start; gap: 11px;
-  padding: 10px 0; border-bottom: 1px solid var(--border);
-}
-.today-event-item:last-child { border-bottom: none; }
-.today-event-dot {
-  width: 18px; height: 18px; border-radius: 50%; flex-shrink: 0; margin-top: 1px;
-  background: var(--event); display: flex; align-items: center; justify-content: center;
-  font-size: 9px; color: white; font-weight: 700;
-}
-.today-event-label { font-size: 14px; font-weight: 500; color: var(--event); }
-.today-event-sub   { font-size: 12px; color: var(--muted); margin-top: 2px; }
 
 /* ── Sticky note ── */
 .sticky-note {
@@ -459,6 +447,22 @@ button { font-family: inherit; cursor: pointer; border: none; transition: all 0.
       <div id="today-schedule"></div>
     </div>
     <div class="card">
+      <div class="section-head" style="margin-bottom:12px">Upcoming events</div>
+      <div id="upcoming-events-list"></div>
+      <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+        <input type="text"  id="ev-title"    placeholder="Event name" style="flex:2;min-width:120px">
+        <input type="date"  id="ev-date"     style="flex:1;min-width:110px">
+        <select id="ev-category" style="flex:1;min-width:120px">
+          <option value="race">Race / Competition</option>
+          <option value="travel">Travel / Flight</option>
+          <option value="social">Social</option>
+          <option value="appointment">Appointment</option>
+          <option value="other">Other</option>
+        </select>
+        <button class="btn-primary" onclick="addPersonalEvent()" style="white-space:nowrap">Add</button>
+      </div>
+    </div>
+    <div class="card">
       <div class="section-head">Upcoming deadlines</div>
       <div id="upcoming-deadlines"></div>
     </div>
@@ -510,10 +514,6 @@ button { font-family: inherit; cursor: pointer; border: none; transition: all 0.
     <div class="card">
       <div class="section-head" style="margin-bottom:4px">Filthy Labs milestones</div>
       <div id="dl-labs"></div>
-    </div>
-    <div class="card">
-      <div class="section-head" style="margin-bottom:4px">Personal events</div>
-      <div id="dl-events"></div>
     </div>
   </div>
 
@@ -588,38 +588,6 @@ button { font-family: inherit; cursor: pointer; border: none; transition: all 0.
 
   <!-- ══ TASKS (ACADEMIC) ══ -->
   <div id="tab-tasks" style="display:none">
-    <div class="card">
-      <div class="section-head" style="margin-bottom:14px">Add personal event</div>
-      <div class="form-group">
-        <label>Event name</label>
-        <input type="text" id="ev-title" placeholder="e.g. Cape Town Cycle Tour">
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label>Date</label>
-          <input type="date" id="ev-date">
-        </div>
-        <div class="form-group">
-          <label>Category</label>
-          <select id="ev-category">
-            <option value="race">Race / Competition</option>
-            <option value="travel">Travel / Flight</option>
-            <option value="social">Social</option>
-            <option value="appointment">Appointment</option>
-            <option value="other">Other</option>
-          </select>
-        </div>
-      </div>
-      <div class="form-group">
-        <label>Notes (optional)</label>
-        <input type="text" id="ev-notes" placeholder="Any extra detail">
-      </div>
-      <button class="btn-primary" onclick="addPersonalEvent()" style="width:100%;margin-top:4px">Add event</button>
-    </div>
-    <div class="card">
-      <div class="section-head" style="margin-bottom:4px">Upcoming personal events</div>
-      <div id="event-list"></div>
-    </div>
     <div class="card">
       <div class="section-head" style="margin-bottom:14px">Add academic task</div>
       <div class="form-group">
@@ -854,8 +822,8 @@ function switchTab(tab) {
   if (tab==='calendar')  renderCalendar();
   if (tab==='deadlines') renderDeadlinesTab();
   if (tab==='labs')      renderLabs();
-  if (tab==='tasks')     { renderEventList(); renderTaskList(); }
-  if (tab==='today')     { renderUpcomingDeadlines(); renderTodayTasks(); }
+  if (tab==='tasks')     renderTaskList();
+  if (tab==='today')     { renderUpcomingDeadlines(); renderTodayTasks(); renderUpcomingEventsList(); }
 }
 
 // ─── API key ──────────────────────────────────────────────────────────────────
@@ -1333,28 +1301,24 @@ function renderUpcomingDeadlines() {
     .map(t => ({ ...t, deadline:t.targetDate, days:daysBetween(t.targetDate), source:'labs' }));
   const exams = EXAMS
     .map(e => ({ ...e, deadline:e.date, days:daysBetween(e.date), source:'exam' }));
-  const events = S.events
-    .map(ev => ({ ...ev, deadline:ev.date, days:daysBetween(ev.date), source:'event' }));
-
-  const list = [...exams, ...academic, ...fl, ...events]
+  const list = [...exams, ...academic, ...fl]
     .filter(t => t.days >= 0 && t.days <= 45)
     .sort((a,b) => a.days - b.days)
-    .slice(0, 10);
+    .slice(0, 8);
 
   if (!list.length) {
     el.innerHTML = `<div class="empty">No upcoming deadlines. Add tasks in the Tasks tab.</div>`;
     return;
   }
   el.innerHTML = list.map(t => {
-    const isExam  = t.source === 'exam';
-    const isEvent = t.source === 'event';
-    const cls = isExam ? 'b-exam' : isEvent ? 'b-amber' : t.days<=6 ? 'b-red' : t.days<=13 ? 'b-amber' : 'b-green';
+    const isExam = t.source === 'exam';
+    const cls = isExam ? 'b-exam' : t.days<=6 ? 'b-red' : t.days<=13 ? 'b-amber' : 'b-green';
     const lbl = t.days===0 ? 'Today' : t.days===1 ? 'Tomorrow' : `${t.days}d`;
-    const sub = isExam ? 'Exam' : isEvent ? (EV_CATEGORY_LABEL[t.category]||t.category) : t.source==='labs' ? 'Filthy Labs' : t.course;
+    const sub = isExam ? 'Exam' : t.source==='labs' ? 'Filthy Labs' : t.course;
     return `
       <div class="dl-item">
         <div>
-          <div class="dl-name" style="${isExam?'font-weight:600':isEvent?'color:var(--event)':''}">${esc(t.title)}</div>
+          <div class="dl-name" style="${isExam?'font-weight:600':''}">${esc(t.title)}</div>
           ${sub ? `<div class="dl-sub">${esc(sub)}</div>` : ''}
         </div>
         <span class="dl-days badge ${cls}">${lbl}</span>
@@ -1432,28 +1396,6 @@ function renderDeadlinesTab() {
     }).join('');
   }
 
-  // Personal events
-  const evEl  = document.getElementById('dl-events');
-  const evDl  = S.events
-    .map(ev => ({ ...ev, days: daysBetween(ev.date) }))
-    .sort((a,b) => a.days - b.days);
-
-  if (!evDl.length) {
-    evEl.innerHTML = `<div class="empty">No personal events. Add them in the Tasks tab.</div>`;
-  } else {
-    evEl.innerHTML = evDl.map(ev => {
-      const cls = ev.days < 0 ? 'b-grey' : ev.days === 0 ? 'b-amber' : ev.days <= 7 ? 'b-amber' : 'b-green';
-      const lbl = ev.days < 0 ? 'Past' : ev.days === 0 ? 'Today' : ev.days === 1 ? 'Tomorrow' : `${ev.days}d`;
-      return `
-        <div class="dl-item">
-          <div>
-            <div class="dl-name" style="${ev.days<0?'color:var(--muted)':'color:var(--event)'}">${esc(ev.title)}</div>
-            <div class="dl-sub">${fmtShort(ev.date)} · ${EV_CATEGORY_LABEL[ev.category]||ev.category}${ev.notes?' · '+esc(ev.notes):''}</div>
-          </div>
-          <span class="dl-days badge ${cls}">${lbl}</span>
-        </div>`;
-    }).join('');
-  }
 }
 
 // ─── Calendar ─────────────────────────────────────────────────────────────────
@@ -1712,18 +1654,16 @@ function addPersonalEvent() {
   const title    = document.getElementById('ev-title').value.trim();
   const date     = document.getElementById('ev-date').value;
   const category = document.getElementById('ev-category').value;
-  const notes    = document.getElementById('ev-notes').value.trim();
   if (!title) { document.getElementById('ev-title').focus(); return; }
   if (!date)  { document.getElementById('ev-date').focus();  return; }
 
-  S.events.push({ id: 'ev' + Date.now(), title, date, category, notes });
+  S.events.push({ id: 'ev' + Date.now(), title, date, category, notes: '' });
   // Bust the focus cache so the next generation accounts for this event
   S.focus = null; S.focusDate = '';
   persist();
   document.getElementById('ev-title').value = '';
   document.getElementById('ev-date').value  = '';
-  document.getElementById('ev-notes').value = '';
-  renderEventList();
+  renderUpcomingEventsList();
   renderUpcomingDeadlines();
   renderCalendar();
 }
@@ -1733,24 +1673,24 @@ function removePersonalEvent(id) {
   // Bust the focus cache so removal is reflected in the next generation
   S.focus = null; S.focusDate = '';
   persist();
-  renderEventList();
+  renderUpcomingEventsList();
   renderUpcomingDeadlines();
   renderCalendar();
 }
 
-function renderEventList() {
-  const el     = document.getElementById('event-list');
+function renderUpcomingEventsList() {
+  const el     = document.getElementById('upcoming-events-list');
   const sorted = [...S.events].sort((a,b) => a.date.localeCompare(b.date));
-  if (!sorted.length) { el.innerHTML = `<div class="empty">No personal events yet — add one above.</div>`; return; }
+  if (!sorted.length) { el.innerHTML = `<div class="empty" style="padding:4px 0 2px">No events added yet.</div>`; return; }
   el.innerHTML = sorted.map(ev => {
     const days = daysBetween(ev.date);
-    const col  = days < 0 ? 'var(--muted)' : days === 0 ? 'var(--event)' : days <= 7 ? 'var(--event)' : 'var(--muted)';
+    const col  = days < 0 ? 'var(--muted)' : days <= 3 ? 'var(--event)' : 'var(--text)';
     const lbl  = days < 0 ? 'Past' : days === 0 ? 'Today' : days === 1 ? 'Tomorrow' : `${days}d`;
     return `
       <div class="task-item">
         <div style="flex:1;min-width:0">
-          <div class="task-title">${esc(ev.title)}</div>
-          <div class="task-meta">${fmtShort(ev.date)} · ${EV_CATEGORY_LABEL[ev.category]||ev.category}${ev.notes?' · '+esc(ev.notes):''}</div>
+          <div class="task-title" style="color:${col}">${esc(ev.title)}</div>
+          <div class="task-meta">${fmtShort(ev.date)} · ${EV_CATEGORY_LABEL[ev.category]||ev.category}</div>
         </div>
         <div class="task-right">
           <span style="font-size:12px;font-weight:600;color:${col}">${lbl}</span>
@@ -1959,18 +1899,13 @@ function renderTodayTasks() {
     items.push({ id: examToday.id, label: examToday.title, sub: 'Today — go execute', done: false });
   }
 
-  // Personal events today and tomorrow (non-checkable info rows)
-  const tomorrow = (() => { const d = new Date(); d.setDate(d.getDate()+1); return d.toISOString().split('T')[0]; })();
-  const eventsNear = S.events
-    .filter(ev => ev.date === today || ev.date === tomorrow)
-    .sort((a,b) => a.date.localeCompare(b.date));
 
-  if (!items.length && !eventsNear.length) {
+  if (!items.length) {
     el.innerHTML = '<div class="empty">Nothing critical today.</div>';
     return;
   }
 
-  const taskHtml = items.map(item => `
+  el.innerHTML = items.map(item => `
     <div class="today-task-item ${item.done ? 'done' : ''}" onclick="toggleTodayTask('${item.id}')">
       <div class="today-task-cb ${item.done ? 'checked' : ''}"></div>
       <div>
@@ -1978,21 +1913,6 @@ function renderTodayTasks() {
         <div class="today-task-sub">${esc(item.sub)}</div>
       </div>
     </div>`).join('');
-
-  const eventHtml = eventsNear.map(ev => {
-    const isToday = ev.date === today;
-    const sub = (isToday ? 'Today' : 'Tomorrow') + ' · ' + (EV_CATEGORY_LABEL[ev.category] || ev.category) + (ev.notes ? ' · ' + esc(ev.notes) : '');
-    return `
-    <div class="today-event-item">
-      <div class="today-event-dot">${isToday ? '!' : '→'}</div>
-      <div>
-        <div class="today-event-label">${esc(ev.title)}</div>
-        <div class="today-event-sub">${sub}</div>
-      </div>
-    </div>`;
-  }).join('');
-
-  el.innerHTML = taskHtml + eventHtml;
 }
 
 function toggleTodayTask(id) {
@@ -2017,7 +1937,7 @@ renderTodayTasks();
 renderUpcomingDeadlines();
 renderCompletionLog();
 renderStickyNote();
-// event-list is in the Tasks tab — rendered on tab switch, no boot call needed
+renderUpcomingEventsList();
 document.getElementById('sticky-note').style.display = '';
 
 if (!S.apiKey) {
