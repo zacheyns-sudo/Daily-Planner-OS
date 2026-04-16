@@ -1035,10 +1035,19 @@ ${upcomingEvents.map(ev => {
 → Any academic task due ON or AFTER an event should be treated as due the day BEFORE the event.`
     : 'PERSONAL EVENTS: None in the next 10 days.';
 
+  // Derive day-specific constraints from actual active (non-cancelled) slots
+  const hasPBL       = activeSlots.some(s => /pbl|econometrics|international relations/i.test(s.n));
+  const hasWaterPolo = activeSlots.some(s => /water polo/i.test(s.n));
+  const thursdayRule = dow === 4
+    ? hasPBL
+      ? `6. Today has back-to-back PBLs in the schedule above — this is a heavy day. Recommend nothing new; only surface what is already due today.`
+      : `6. Thursday PBLs are cancelled today — treat as a free study day and recommend the highest-priority pending task.`
+    : `6. (Thursday-specific rule — not today)`;
+
   return `You are a calm, practical academic organiser. Recommend exactly ONE task.
 
 TODAY: ${fmtLong()} — ${sched.label}
-Schedule: ${activeSlots.length ? activeSlots.map(s=>s.n).join(', ') : 'completely free'}
+Schedule (cancelled events excluded): ${activeSlots.length ? activeSlots.map(s=>s.n).join(', ') : 'completely free — all usual events cancelled or none scheduled'}
 ${schedLines}
 Note: ${sched.note}
 
@@ -1085,7 +1094,7 @@ ${eventsSection}
 3. For Tier 4 essays: use the pre-determined chunk label EXACTLY as written (e.g. "Write the outline for…"). Never say "work on the essay".
 4. For Tier 3 (lecture review): name the specific course and suggest reviewing key concepts from that lecture. Only surface if the student hasn't reviewed it yet.
 5. Never recommend FL if Tiers EXAM-CRITICAL–3 have anything, or if any academic deadline is within 7 days.
-6. Thursday has two back-to-back PBLs (Econometrics 9–11:45, IR 12:15–15:00) plus water polo at 22:15 — recommend nothing new, only what is already due today.
+${thursdayRule}
 7. Friday is completely free — recommend the highest-effort task available.
 8. Sunday: recommend rest unless Tier EXAM-CRITICAL or Tier 1 is non-empty.
 9. Econometrics lecture review and problem set prep are scheduled Tuesday mornings only — the lecture is on Monday.
