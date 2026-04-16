@@ -959,11 +959,31 @@ function buildPrompt() {
   // Filter recurring PS by completedTasks so completed-today ones are excluded
   const recurringPS = getRecurringPS().filter(p => !S.completedTasks.includes(p.id));
 
-  // All pending academic tasks — exclude done and already-completed-today
+  // Compute upcoming personal events FIRST — used to derive effective days for each task.
+  // Use a 30-day window so events beyond the 10-day display window still affect tier placement.
+  const allUpcomingEvents = S.events
+    .map(ev => ({ ...ev, days: daysBetween(ev.date) }))
+    .filter(ev => ev.days >= 0 && ev.days <= 30)
+    .sort((a,b) => a.days - b.days);
+
+  // For a task due in rawDays, find the nearest event that falls BEFORE the deadline.
+  // If found, effective days = event.days - 1 (must finish the day before the event).
+  const withEffective = rawDays => {
+    const blocker = allUpcomingEvents.find(ev => ev.days > 0 && ev.days < rawDays);
+    if (!blocker) return { eff: rawDays, blocker: null };
+    return { eff: Math.max(0, blocker.days - 1), blocker };
+  };
+
+  // All pending academic tasks — exclude done and already-completed-today.
+  // Each task gets an effective days (eff) used for tier placement, plus rawDays for display.
   const allAcademic = S.tasks
     .filter(t => !t.done && !S.completedTasks.includes(t.id))
-    .map(t => ({ ...t, days: daysBetween(t.deadline) }))
-    .filter(t => t.days >= 0 && t.days <= 60)
+    .map(t => {
+      const rawDays = daysBetween(t.deadline);
+      const { eff, blocker } = withEffective(rawDays);
+      return { ...t, days: eff, rawDays, blocker };
+    })
+    .filter(t => t.rawDays >= 0 && t.rawDays <= 60)
     .sort((a,b) => a.days - b.days);
 
   // Exam context
@@ -1001,10 +1021,13 @@ function buildPrompt() {
     .sort((a,b) => a.days - b.days);
 
   // ── Format helpers — include task ID so Claude can echo it back ─────────────
-  const fmtTask = t =>
-    `  • [id:${t.id}] "${t.title}"${t.course?' ('+t.course+')':''} — ${t.days}d remaining${t.notes?' | note: '+t.notes:''}`;
+  const blockerTag = t => t.blocker
+    ? ` ⚡ ${t.rawDays}d to deadline but effective ${t.days}d — ${EV_CATEGORY_LABEL[t.blocker.category]||t.blocker.category} "${t.blocker.title}" in ${t.blocker.days}d`
+    : ` — ${t.days}d remaining`;
+  const fmtTask  = t =>
+    `  • [id:${t.id}] "${t.title}"${t.course?' ('+t.course+')':''}${blockerTag(t)}${t.notes?' | note: '+t.notes:''}`;
   const fmtChunk = t =>
-    `  • [id:${t.id}] ${t.chunk} — "${t.title}"${t.course?' ('+t.course+')':''} — ${t.days}d remaining`;
+    `  • [id:${t.id}] ${t.chunk} — "${t.title}"${t.course?' ('+t.course+')':''}${blockerTag(t)}`;
   const fmtLect = t => `  • [id:${t.id}] ${t.name}`;
   const fmtFL   = t =>
     `  • [id:${t.id}] "${t.title}" | ${t.isMilestone?'milestone':'task'}${t.targetDate?' | target '+fmtShort(t.targetDate)+' ('+t.days+'d)':''}`;
@@ -1021,11 +1044,8 @@ Pending tasks:
 ${flPending.map(fmtFL).join('\n')}`
     : `FILTHY LABS: Do not recommend today — academic work is pending or urgent.`;
 
-  // Upcoming personal events in the next 10 days — these act as effective deadline cutoffs
-  const upcomingEvents = S.events
-    .map(ev => ({ ...ev, days: daysBetween(ev.date) }))
-    .filter(ev => ev.days >= 0 && ev.days <= 10)
-    .sort((a,b) => a.days - b.days);
+  // Narrow to 10-day window for the prompt display section (tier calc already used the 30-day list)
+  const upcomingEvents = allUpcomingEvents.filter(ev => ev.days <= 10);
   const eventsSection = upcomingEvents.length
     ? `PERSONAL EVENTS (next 10 days — treat each as an effective work cutoff):
 ${upcomingEvents.map(ev => {
@@ -1099,7 +1119,7 @@ ${thursdayRule}
 8. Sunday: recommend rest unless Tier EXAM-CRITICAL or Tier 1 is non-empty.
 9. Econometrics lecture review and problem set prep are scheduled Tuesday mornings only — the lecture is on Monday.
 10. Match the time estimate to today's real free windows.
-11. PERSONAL EVENTS: If a personal event falls today — acknowledge it and only recommend something workable around it. If an event is tomorrow or within a few days, treat it as an effective deadline: any work due on or after that event should be prioritised NOW so it is done before the event. Mention the event in your reason.
+11. PERSONAL EVENTS: Tasks marked ⚡ have already had their tier placement adjusted to account for an upcoming event — their effective days reflect the window before the event, not the raw deadline. If a personal event falls today, acknowledge it and only recommend something workable around it. Always mention the event in your reason when it is relevant.
 
 Respond with ONLY valid JSON, no markdown fences, no extra text:
 {
