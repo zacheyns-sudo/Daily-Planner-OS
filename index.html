@@ -491,8 +491,8 @@ button { font-family: inherit; cursor: pointer; border: none; transition: all 0.
       <div class="cal-legend">
         <span class="cal-legend-item"><span class="cal-dot dot-class"   style="width:8px;height:8px"></span>Class</span>
         <span class="cal-legend-item"><span class="cal-dot dot-sport"   style="width:8px;height:8px"></span>Sport / Fitness</span>
-        <span class="cal-legend-item"><span class="cal-dot dot-urgent"  style="width:8px;height:8px"></span>Deadline &lt;7d</span>
-        <span class="cal-legend-item"><span class="cal-dot dot-soon"    style="width:8px;height:8px"></span>Deadline &lt;14d</span>
+        <span class="cal-legend-item"><span class="cal-dot dot-urgent"  style="width:8px;height:8px"></span>Deadline &lt;3d</span>
+        <span class="cal-legend-item"><span class="cal-dot dot-soon"    style="width:8px;height:8px"></span>Deadline &lt;7d</span>
         <span class="cal-legend-item"><span class="cal-dot dot-ok"      style="width:8px;height:8px"></span>Deadline</span>
         <span class="cal-legend-item"><span class="cal-dot dot-fl"      style="width:8px;height:8px"></span>Labs milestone</span>
         <span class="cal-legend-item"><span class="cal-dot dot-exam"    style="width:8px;height:8px"></span>Exam</span>
@@ -1312,7 +1312,7 @@ function renderUpcomingDeadlines() {
   }
   el.innerHTML = list.map(t => {
     const isExam = t.source === 'exam';
-    const cls = isExam ? 'b-exam' : t.days<=6 ? 'b-red' : t.days<=13 ? 'b-amber' : 'b-green';
+    const cls = isExam ? 'b-exam' : t.days<=3 ? 'b-red' : t.days<=7 ? 'b-amber' : 'b-green';
     const lbl = t.days===0 ? 'Today' : t.days===1 ? 'Tomorrow' : `${t.days}d`;
     const sub = isExam ? 'Exam' : t.source==='labs' ? 'Filthy Labs' : t.course;
     return `
@@ -1359,7 +1359,7 @@ function renderDeadlinesTab() {
   } else {
     const TYPE_LABEL = {essay:'Essay','problem-set':'Problem set',reading:'Reading',review:'Review',presentation:'Presentation',other:'Other'};
     acEl.innerHTML = sorted.map(t => {
-      const cls = t.done ? 'b-grey' : t.days<0 ? 'b-red' : t.days<=6 ? 'b-red' : t.days<=13 ? 'b-amber' : 'b-green';
+      const cls = t.done ? 'b-grey' : t.days<0 ? 'b-red' : t.days<=3 ? 'b-red' : t.days<=7 ? 'b-amber' : 'b-green';
       const lbl = t.done ? 'Done' : t.days<0 ? 'Overdue' : t.days===0 ? 'Today' : t.days===1 ? 'Tomorrow' : `${t.days}d`;
       return `
         <div class="dl-item">
@@ -1383,7 +1383,7 @@ function renderDeadlinesTab() {
     flEl.innerHTML = `<div class="empty">No Labs milestones with dates. Add them in the Labs tab.</div>`;
   } else {
     flEl.innerHTML = flDl.map(t => {
-      const cls = t.done ? 'b-grey' : t.days<0 ? 'b-red' : t.days<=6 ? 'b-red' : t.days<=13 ? 'b-amber' : 'b-green';
+      const cls = t.done ? 'b-grey' : t.days<0 ? 'b-red' : t.days<=3 ? 'b-red' : t.days<=7 ? 'b-amber' : 'b-green';
       const lbl = t.done ? 'Done' : t.days<0 ? 'Overdue' : t.days===0 ? 'Today' : t.days===1 ? 'Tomorrow' : `${t.days}d`;
       return `
         <div class="dl-item">
@@ -1477,7 +1477,7 @@ function computeDots(ds, dow, dlMap) {
 
   if (academic.length) {
     const days = daysBetween(ds);
-    dots.push(days <= 6 ? 'urgent' : days <= 13 ? 'soon' : 'ok');
+    dots.push(days <= 3 ? 'urgent' : days <= 7 ? 'soon' : 'ok');
   }
   if (fl.length) dots.push('fl');
   if (EXAMS.some(e => e.date === ds)) dots.push('exam');
