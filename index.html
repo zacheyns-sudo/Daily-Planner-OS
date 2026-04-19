@@ -599,7 +599,7 @@ html[data-theme="dark"] .sticky-note input[type="text"] { color: #ECD9A8; }
     <button class="tab-btn"        id="btn-deadlines" onclick="switchTab('deadlines')">Deadlines</button>
     <button class="tab-btn"        id="btn-projects"  onclick="switchTab('projects')">Projects</button>
     <button class="tab-btn"        id="btn-tasks"     onclick="switchTab('tasks')">Tasks</button>
-    <button class="tab-btn tab-icon" title="Change API key" onclick="showApiKeyCard()">🔑</button>
+    <button class="tab-btn" title="Change API key" onclick="showApiKeyCard()">Key</button>
   </nav>
 </header>
 
@@ -2137,7 +2137,7 @@ async function runExtraction() {
   const input = document.getElementById('extract-input').value.trim();
   const resultEl = document.getElementById('extract-result');
   if (!input) { document.getElementById('extract-input').focus(); return; }
-  if (!S.apiKey) { alert('Set an API key first (🔑 button in the tab bar).'); return; }
+  if (!S.apiKey) { alert('Set an API key first (Key button in the tab bar).'); return; }
 
   const btn = document.getElementById('extract-btn');
   btn.disabled = true;
