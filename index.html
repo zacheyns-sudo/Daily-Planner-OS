@@ -1024,8 +1024,9 @@ function getEffectiveSlots(dow, dateStr) {
     const permKey = `${dow}-${i}`;
     const ov = (dateKey && S.scheduleEdits[dateKey]) || S.scheduleEdits[permKey] || null;
     if (!ov) return { ...slot, index: i, cancelled: false };
+    if (ov.deleted) return null;
     return { ...slot, ...ov, index: i };
-  });
+  }).filter(Boolean);
 }
 
 function slotCategory(name) {
@@ -1715,7 +1716,8 @@ function renderCalDetail() {
     html += slots.map(s => `
       <div class="cal-detail-row has-action${s.cancelled?' cancelled':''}" onclick="openEditModal(${dow},${s.index},'${calSelected}')">
         <span style="flex:1">${esc(s.t)} — ${esc(s.n)}</span>
-        ${s.cancelled ? `<span class="badge b-grey" style="font-size:10px;padding:1px 7px">Cancelled</span>` : ''}
+        ${s.cancelled ? `<span class="badge b-grey" style="font-size:10px;padding:1px 7px">Cancelled</span>
+          <button class="btn-ghost" style="color:var(--red); padding:2px 7px; font-size:11px" onclick="event.stopPropagation(); deleteCalEvent(${dow}, ${s.index}, '${calSelected}')">Delete</button>` : ''}
         <span class="edit-hint">edit</span>
       </div>`).join('');
   } else {
@@ -2445,6 +2447,22 @@ function saveEventEdit() {
   S.scheduleEdits[key] = { n: name, t: end ? `${start}–${end}` : start, cancelled, category };
   persist();
   closeEditModal();
+  renderSchedule();
+  renderCalendar();
+}
+
+function deleteCalEvent(dow, index, dateStr) {
+  if (!confirm('Remove this cancelled event from view?')) return;
+  const dateKey = `date-${dateStr}-${dow}-${index}`;
+  const permKey = `${dow}-${index}`;
+  if (S.scheduleEdits[dateKey]) {
+    S.scheduleEdits[dateKey].deleted = true;
+  } else if (S.scheduleEdits[permKey]) {
+    S.scheduleEdits[permKey].deleted = true;
+  } else {
+    return;
+  }
+  persist();
   renderSchedule();
   renderCalendar();
 }
