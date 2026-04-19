@@ -421,6 +421,7 @@ button { font-family: inherit; cursor: pointer; border: none; transition: all 0.
     <button class="tab-btn"        id="btn-deadlines" onclick="switchTab('deadlines')">Deadlines</button>
     <button class="tab-btn"        id="btn-labs"      onclick="switchTab('labs')">Labs</button>
     <button class="tab-btn"        id="btn-tasks"     onclick="switchTab('tasks')">Tasks</button>
+    <button class="tab-btn" title="Change API key" onclick="showApiKeyCard()">🔑</button>
   </nav>
 </header>
 
@@ -827,6 +828,12 @@ function switchTab(tab) {
 }
 
 // ─── API key ──────────────────────────────────────────────────────────────────
+function showApiKeyCard() {
+  switchTab('today');
+  document.getElementById('setup-card').style.display = '';
+  document.getElementById('api-key-input').value = '';
+  document.getElementById('api-key-input').focus();
+}
 function saveApiKey() {
   const v = document.getElementById('api-key-input').value.trim();
   if (!v.startsWith('sk-ant-')) { alert('Anthropic API keys start with sk-ant-'); return; }
