@@ -1214,7 +1214,10 @@ function buildPrompt() {
   const fmtLect  = t => `  • [id:${t.id}] ${t.name}`;
 
   const activeSlots = getEffectiveSlots(dow, todayStr()).filter(s => !s.cancelled);
-  const schedLines = activeSlots.length ? activeSlots.map(s => `  ${s.t}: ${s.n}`).join('\n') : '  None — open day.';
+  const todayClasses = S.events.filter(ev => ev.date === todayStr() && ev.category === 'class' && ev.time)
+    .map(ev => ({ t: ev.time, n: ev.title }));
+  const combinedSched = [...activeSlots.map(s => ({ t: s.t, n: s.n })), ...todayClasses];
+  const schedLines = combinedSched.length ? combinedSched.map(s => `  ${s.t}: ${s.n}`).join('\n') : '  None — open day.';
 
   const upcomingEvents = allUpcomingEvents.filter(ev => ev.days <= 10);
   const eventsSection = upcomingEvents.length
@@ -1236,7 +1239,7 @@ ${upcomingEvents.map(ev => {
   return `You are a calm, practical academic organiser. Recommend exactly ONE task.
 
 TODAY: ${fmtLong()} — ${sched.label}
-Schedule (cancelled events excluded): ${activeSlots.length ? activeSlots.map(s=>s.n).join(', ') : 'completely free — all usual events cancelled or none scheduled'}
+Schedule (cancelled events excluded): ${combinedSched.length ? combinedSched.map(s=>s.n).join(', ') : 'completely free — all usual events cancelled or none scheduled'}
 ${schedLines}
 Note: ${sched.note}
 
@@ -1462,20 +1465,27 @@ function renderSchedule() {
   const ds     = todayStr();
   const slots  = getEffectiveSlots(dow, ds);
   const active = slots.filter(s => !s.cancelled);
+  const classEvents = S.events.filter(ev => ev.date === ds && ev.category === 'class' && ev.time);
 
-  if (!slots.length) {
+  if (!slots.length && !classEvents.length) {
     el.innerHTML = `<div class="sched-note" style="padding:2px 0">${esc(sched.note)}</div>`;
     return;
   }
   const banner = dow === 1 && active.length >= 3
     ? `<div style="background:var(--amber-bg);color:var(--amber);border-radius:8px;padding:9px 12px;font-size:13px;font-weight:500;margin-bottom:12px">⚠️ Heavy day — back-to-back lectures then Portuguese until 19:00. Your only study window is this morning.</div>`
     : '';
-  el.innerHTML = banner + slots.map(s => `
+  const slotHtml = slots.map(s => `
     <div class="sched-item${s.cancelled?' cancelled':''}" onclick="openEditModal(${dow},${s.index},'${ds}')" style="cursor:pointer">
       <span class="sched-time">${esc(s.t)}</span>
       <span class="sched-name">${esc(s.n)}</span>
       <span class="edit-hint">edit</span>
-    </div>`).join('') + `<div class="sched-note">${esc(sched.note)}</div>`;
+    </div>`).join('');
+  const classHtml = classEvents.map(ev => `
+    <div class="sched-item">
+      <span class="sched-time">${esc(ev.time)}</span>
+      <span class="sched-name">${esc(ev.title)}</span>
+    </div>`).join('');
+  el.innerHTML = banner + slotHtml + classHtml + `<div class="sched-note">${esc(sched.note)}</div>`;
 }
 
 // ─── Upcoming deadlines ──────────────────────────────────────────────────────
@@ -1698,6 +1708,10 @@ function renderCalDetail() {
         <div class="form-group" style="margin-bottom:8px">
           <input type="text" id="cal-ev-title" placeholder="Event name" autocomplete="off">
         </div>
+        <div class="form-row" style="margin-bottom:8px; gap:6px">
+          <input type="text" id="cal-ev-start" placeholder="Start (e.g. 09:00)" style="flex:1">
+          <input type="text" id="cal-ev-end" placeholder="End (optional)" style="flex:1">
+        </div>
         <div class="form-row" style="margin-bottom:10px">
           <select id="cal-ev-category">
             <option value="race">Race / Competition</option>
@@ -1712,14 +1726,20 @@ function renderCalDetail() {
       </div>`;
   }
 
+  const classEvents = S.events.filter(ev => ev.date === calSelected && ev.category === 'class' && ev.time);
   html += `<div class="cal-detail-section"><div class="cal-detail-label">Schedule</div>`;
-  if (slots.length) {
+  if (slots.length || classEvents.length) {
     html += slots.map(s => `
       <div class="cal-detail-row has-action${s.cancelled?' cancelled':''}" onclick="openEditModal(${dow},${s.index},'${calSelected}')">
         <span style="flex:1">${esc(s.t)} — ${esc(s.n)}</span>
         ${s.cancelled ? `<span class="badge b-grey" style="font-size:10px;padding:1px 7px">Cancelled</span>
           <button class="btn-ghost" style="color:var(--red); padding:2px 7px; font-size:11px" onclick="event.stopPropagation(); deleteCalEvent(${dow}, ${s.index}, '${calSelected}')">Delete</button>` : ''}
         <span class="edit-hint">edit</span>
+      </div>`).join('');
+    html += classEvents.map(ev => `
+      <div class="cal-detail-row">
+        <span style="flex:1">${esc(ev.time)} — ${esc(ev.title)}</span>
+        <button class="btn-remove" onclick="removePersonalEvent('${ev.id}')">✕</button>
       </div>`).join('');
   } else {
     html += `<div class="cal-detail-row" style="color:var(--muted)">${esc(sched?.note||'No commitments.')}</div>`;
@@ -1739,7 +1759,7 @@ function renderCalDetail() {
     html += `</div>`;
   }
 
-  const evOnDay = S.events.filter(ev => ev.date === calSelected);
+  const evOnDay = S.events.filter(ev => ev.date === calSelected && !(ev.category === 'class' && ev.time));
   if (evOnDay.length) {
     html += `<div class="cal-detail-section"><div class="cal-detail-label">Personal events</div>`;
     html += evOnDay.map(ev => {
@@ -1768,10 +1788,13 @@ function toggleCalAddEvent() {
 function saveCalEvent() {
   const title = document.getElementById('cal-ev-title').value.trim();
   const category = document.getElementById('cal-ev-category').value;
+  const start = document.getElementById('cal-ev-start').value.trim();
+  const end = document.getElementById('cal-ev-end').value.trim();
+  const time = start ? (end ? `${start}–${end}` : start) : '';
   if (!title) { document.getElementById('cal-ev-title').focus(); return; }
   if (!calSelected) return;
 
-  S.events.push({ id: 'ev' + Date.now(), title, date: calSelected, category, notes: '' });
+  S.events.push({ id: 'ev' + Date.now(), title, date: calSelected, category, time, notes: '' });
   S.focus = null; S.focusDate = '';
   calAddingEvent = false;
   persist();
