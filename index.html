@@ -939,7 +939,7 @@ const EXAMS = [
   { id:'exam-eoc',  title:'Economics of Conflict exam', date:'2026-05-28', course:'EoC' },
 ];
 
-const EV_CATEGORY_LABEL = { race:'Race / Competition', travel:'Travel / Flight', social:'Social', appointment:'Appointment', other:'Other' };
+const EV_CATEGORY_LABEL = { race:'Race / Competition', travel:'Travel / Flight', social:'Social', appointment:'Appointment', class:'Lecture / Class / PBL', other:'Other' };
 
 // ─── Migration: old flTasks/flLog/flProducts → projects ──────────────────────
 function migrateProjects() {
@@ -1704,6 +1704,7 @@ function renderCalDetail() {
             <option value="travel">Travel / Flight</option>
             <option value="social">Social</option>
             <option value="appointment">Appointment</option>
+            <option value="class">Lecture / Class / PBL</option>
             <option value="other">Other</option>
           </select>
           <button class="btn-primary" onclick="saveCalEvent()">Add</button>
