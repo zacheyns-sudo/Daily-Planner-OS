@@ -972,8 +972,8 @@ cleanSlateV1();
 // events show up under Schedule (not Personal events) and pick up PBL tags
 // from room number. Users need to re-import once for location to become
 // available on old events — this bump handles events that already have it.
-function reclassifyICSv2() {
-  if (localStorage.getItem('org_reclassify_ics_v2')) return;
+function reclassifyICSv3() {
+  if (localStorage.getItem('org_reclassify_ics_v3')) return;
   try {
     const evs = JSON.parse(localStorage.getItem('org_events') || '[]');
     const next = evs.map(e => {
@@ -983,9 +983,9 @@ function reclassifyICSv2() {
     });
     localStorage.setItem('org_events', JSON.stringify(next));
   } catch {}
-  localStorage.setItem('org_reclassify_ics_v2', '1');
+  localStorage.setItem('org_reclassify_ics_v3', '1');
 }
-reclassifyICSv2();
+reclassifyICSv3();
 
 // ─── State ────────────────────────────────────────────────────────────────────
 const S = {
@@ -1973,22 +1973,24 @@ function inferCategory(title, cats) {
 // "Macro PBL" from "Macro Lecture" — the room does.
 const PBL_ROOMS = new Set([4, 17, 18]);
 
-// ICS imports come from an academic calendar — default to "class" unless clearly
-// non-academic. Also detects a sub-type so the planner knows PBL/tutorial days.
+// ICS imports come from an academic calendar — default to "class" unless the
+// TITLE clearly says otherwise. We deliberately don't look at CATEGORIES or
+// DESCRIPTION when deciding the top-level category because Apple Calendar
+// often stamps every subscribed event with CATEGORIES:Appointment, which
+// would misclassify the whole feed.
 function classifyICSEvent(title, cats, description, location) {
-  const t = (title + ' ' + cats + ' ' + description + ' ' + (location || '')).toLowerCase();
-  if (/(polo|hyrox|gym|run|swim|training|workout|race)/.test(t))         return { category: 'race',        classType: null };
-  if (/(flight|travel|airport)/.test(t))                                  return { category: 'travel',      classType: null };
-  if (/(doctor|dentist|gp |clinic|appointment)/.test(t))                  return { category: 'appointment', classType: null };
-  if (/(party|drinks|birthday)/.test(t))                                  return { category: 'social',      classType: null };
-  // Default: treat as class and tag the sub-type
+  const titleLc = String(title || '').toLowerCase();
+  if (/\b(polo|hyrox|gym|run|swim|training|workout|race)\b/.test(titleLc))         return { category: 'race',        classType: null };
+  if (/\b(flight|airport)\b/.test(titleLc))                                         return { category: 'travel',      classType: null };
+  if (/\b(doctor|dentist|dr\.|gp|clinic)\b/.test(titleLc))                          return { category: 'appointment', classType: null };
+  if (/\b(party|drinks|birthday)\b/.test(titleLc))                                  return { category: 'social',      classType: null };
+  // Default: treat as class and tag the sub-type (title + location inform it).
+  const t = (titleLc + ' ' + String(location || '').toLowerCase());
   let classType = 'lecture';
-  // Priority 1: title keyword
-  if (/(\bpbl\b|problem[- ]?based|problem set|problem sheet)/.test(t))    classType = 'pbl';
-  else if (/(tutorial|tut\b|seminar)/.test(t))                            classType = 'tutorial';
-  else if (/(\blab\b|laboratory|practical)/.test(t))                      classType = 'lab';
-  else if (/workshop/.test(t))                                            classType = 'workshop';
-  // Priority 2: room number (any integer in LOCATION matching PBL_ROOMS)
+  if (/(\bpbl\b|problem[- ]?based|problem set|problem sheet)/.test(t))              classType = 'pbl';
+  else if (/(tutorial|\btut\b|seminar)/.test(t))                                    classType = 'tutorial';
+  else if (/(\blab\b|laboratory|practical)/.test(t))                                classType = 'lab';
+  else if (/workshop/.test(t))                                                      classType = 'workshop';
   if (classType === 'lecture' && location) {
     const nums = String(location).match(/\d+/g) || [];
     if (nums.some(n => PBL_ROOMS.has(parseInt(n, 10)))) classType = 'pbl';
