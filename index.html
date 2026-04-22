@@ -967,6 +967,24 @@ function cleanSlateV1() {
 }
 cleanSlateV1();
 
+// Backfill: older imports landed as category:'other' with no classType. Re-run
+// the ICS classifier once so existing events show up under Schedule (not
+// Personal events) and the AI can see PBL/tutorial tags.
+function reclassifyICSv1() {
+  if (localStorage.getItem('org_reclassify_ics_v1')) return;
+  try {
+    const evs = JSON.parse(localStorage.getItem('org_events') || '[]');
+    const next = evs.map(e => {
+      if (e.source !== 'ics') return e;
+      const meta = classifyICSEvent(e.title || '', '', e.notes || '');
+      return { ...e, category: meta.category, classType: e.classType || meta.classType };
+    });
+    localStorage.setItem('org_events', JSON.stringify(next));
+  } catch {}
+  localStorage.setItem('org_reclassify_ics_v1', '1');
+}
+reclassifyICSv1();
+
 // ─── State ────────────────────────────────────────────────────────────────────
 const S = {
   apiKey:         localStorage.getItem('org_key')                        || '',
@@ -1225,9 +1243,9 @@ function buildPrompt() {
   const todayClassesAll = S.events.filter(ev => ev.date === todayStr() && ev.category === 'class' && ev.time);
   const icsStartsToday  = new Set(todayClassesAll.filter(ev => ev.source === 'ics').map(ev => startOf(ev.time)));
   const activeSlots     = rawActiveSlots.filter(s => !icsStartsToday.has(startOf(s.t)));
-  const todayClasses    = todayClassesAll.map(ev => ({ t: ev.time, n: ev.title }));
-  const combinedSched = [...activeSlots.map(s => ({ t: s.t, n: s.n })), ...todayClasses];
-  const schedLines = combinedSched.length ? combinedSched.map(s => `  ${s.t}: ${s.n}`).join('\n') : '  None — open day.';
+  const todayClasses    = todayClassesAll.map(ev => ({ t: ev.time, n: ev.title, classType: ev.classType || null }));
+  const combinedSched = [...activeSlots.map(s => ({ t: s.t, n: s.n, classType: null })), ...todayClasses];
+  const schedLines = combinedSched.length ? combinedSched.map(s => `  ${s.t}: ${s.n}${s.classType ? ` [${s.classType.toUpperCase()}]` : ''}`).join('\n') : '  None — open day.';
 
   const upcomingEvents = allUpcomingEvents.filter(ev => ev.days <= 10);
   const eventsSection = upcomingEvents.length
@@ -1239,7 +1257,7 @@ ${upcomingEvents.map(ev => {
 → Any academic task due ON or AFTER an event should be treated as due the day BEFORE the event.`
     : 'PERSONAL EVENTS: None in the next 10 days.';
 
-  const hasPBL       = combinedSched.some(s => /pbl|problem[- ]?based/i.test(s.n));
+  const hasPBL       = combinedSched.some(s => s.classType === 'pbl' || /pbl|problem[- ]?based/i.test(s.n));
   const thursdayRule = hasPBL
     ? `6. PBLs are in today's schedule — treat as a heavy day. Recommend only tasks already due today.`
     : `6. (no PBL rule today)`;
@@ -1487,11 +1505,16 @@ function renderSchedule() {
       <span class="sched-name">${esc(s.n)}</span>
       <span class="edit-hint">edit</span>
     </div>`).join('');
-  const classHtml = classEvents.map(ev => `
+  const classHtml = classEvents.map(ev => {
+    const tag = ev.classType && ev.classType !== 'lecture'
+      ? ` <span class="badge b-amber" style="font-size:10px;padding:1px 6px;margin-left:6px;text-transform:uppercase">${esc(ev.classType)}</span>`
+      : '';
+    return `
     <div class="sched-item">
       <span class="sched-time">${esc(ev.time)}</span>
-      <span class="sched-name">${esc(ev.title)}</span>
-    </div>`).join('');
+      <span class="sched-name">${esc(ev.title)}${tag}</span>
+    </div>`;
+  }).join('');
   el.innerHTML = slotHtml + classHtml + `<div class="sched-note">${esc(sched.note)}</div>`;
 }
 
@@ -1748,11 +1771,16 @@ function renderCalDetail() {
           <button class="btn-ghost" style="color:var(--red); padding:2px 7px; font-size:11px" onclick="event.stopPropagation(); deleteCalEvent(${dow}, ${s.index}, '${calSelected}')">Delete</button>` : ''}
         <span class="edit-hint">edit</span>
       </div>`).join('');
-    html += classEvents.map(ev => `
+    html += classEvents.map(ev => {
+      const tag = ev.classType && ev.classType !== 'lecture'
+        ? ` <span class="badge b-amber" style="font-size:10px;padding:1px 6px;text-transform:uppercase">${esc(ev.classType)}</span>`
+        : '';
+      return `
       <div class="cal-detail-row">
-        <span style="flex:1">${esc(ev.time)} — ${esc(ev.title)}</span>
+        <span style="flex:1">${esc(ev.time)} — ${esc(ev.title)}${tag}</span>
         <button class="btn-remove" onclick="removePersonalEvent('${ev.id}')">✕</button>
-      </div>`).join('');
+      </div>`;
+    }).join('');
   } else {
     html += `<div class="cal-detail-row" style="color:var(--muted)">${esc(sched?.note||'No commitments.')}</div>`;
   }
@@ -1883,15 +1911,17 @@ function confirmImportICS() {
     const key = `${p.uid || p.summary}|${p.date}|${p.time || ''}`;
     if (seen.has(key)) return;
     seen.add(key);
+    const meta = classifyICSEvent(p.summary || '', p.categories || '', p.description || '');
     S.events.push({
-      id:       'ics' + Date.now() + '_' + added,
-      title:    p.summary || '(untitled)',
-      date:     p.date,
-      category: inferCategory(p.summary || '', p.categories || ''),
-      time:     p.time || '',
-      notes:    (p.description || '').slice(0, 500),
-      source:   'ics',
-      ics_uid:  p.uid || null,
+      id:        'ics' + Date.now() + '_' + added,
+      title:     p.summary || '(untitled)',
+      date:      p.date,
+      category:  meta.category,
+      classType: meta.classType,
+      time:      p.time || '',
+      notes:     (p.description || '').slice(0, 500),
+      source:    'ics',
+      ics_uid:   p.uid || null,
     });
     added++;
   });
@@ -1920,6 +1950,24 @@ function inferCategory(title, cats) {
   if (/(appt|appointment|doctor|dentist|meeting|call)/.test(t))            return 'appointment';
   if (/(party|dinner|drinks|birthday)/.test(t))                            return 'social';
   return 'other';
+}
+
+// ICS imports come from an academic calendar — default to "class" unless clearly
+// non-academic. Also detects a sub-type so the planner knows PBL/tutorial days.
+function classifyICSEvent(title, cats, description) {
+  const t = (title + ' ' + cats + ' ' + description).toLowerCase();
+  if (/(polo|hyrox|gym|run|swim|training|workout|race)/.test(t))         return { category: 'race',        classType: null };
+  if (/(flight|travel|airport)/.test(t))                                  return { category: 'travel',      classType: null };
+  if (/(doctor|dentist|gp |clinic|appointment)/.test(t))                  return { category: 'appointment', classType: null };
+  if (/(party|drinks|birthday)/.test(t))                                  return { category: 'social',      classType: null };
+  // Default: treat as class and tag the sub-type
+  let classType = 'lecture';
+  if (/(\bpbl\b|problem[- ]?based|problem set|problem sheet)/.test(t))    classType = 'pbl';
+  else if (/(tutorial|tut\b|seminar)/.test(t))                            classType = 'tutorial';
+  else if (/(\blab\b|laboratory|practical)/.test(t))                      classType = 'lab';
+  else if (/workshop/.test(t))                                            classType = 'workshop';
+  else if (/(lecture|lect\b)/.test(t))                                    classType = 'lecture';
+  return { category: 'class', classType };
 }
 
 // ── ICS parser (handles VEVENT + RRULE FREQ=DAILY/WEEKLY/MONTHLY) ─────────────
