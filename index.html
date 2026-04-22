@@ -1846,7 +1846,20 @@ function saveCalEvent() {
 }
 
 // ─── ICS import (Apple Calendar .ics → S.events) ─────────────────────────────
-function openImportICS() { document.getElementById('ics-file-input').click(); }
+function openImportICS() {
+  const existing = S.events.filter(e => e.source === 'ics').length;
+  if (!existing) { document.getElementById('ics-file-input').click(); return; }
+  renderImportBanner(`
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+      <div style="font-size:12.5px;color:var(--muted)">${existing} event${existing===1?'':'s'} already imported.</div>
+      <div style="display:flex;gap:6px">
+        <button class="cal-today-btn" style="background:var(--bg);color:var(--muted);border:1px solid var(--border)" onclick="cancelImportICS()">Close</button>
+        <button class="cal-today-btn" style="background:var(--bg);color:var(--red);border:1px solid var(--border)" onclick="clearImportedICS()">Remove all imported</button>
+        <button class="cal-today-btn" onclick="document.getElementById('ics-file-input').click()">Replace with new file</button>
+      </div>
+    </div>
+  `);
+}
 
 function handleICSFile(e) {
   const f = e.target.files && e.target.files[0];
