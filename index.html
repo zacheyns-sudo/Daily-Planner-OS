@@ -872,23 +872,15 @@ const COLOUR_LABEL   = { green:'Green', purple:'Purple', teal:'Teal', clay:'Clay
 
 const WEEKLY = {
   0: { label:'Sunday',    slots:[], note:'Recovery day.' },
-  1: { label:'Monday',    slots:[{t:'12:15–14:00',n:'EoC Lecture'},{t:'15:15–17:00',n:'Econometrics Lecture'},{t:'17:00–19:00',n:'Portuguese'}], note:'Heavy day — back-to-back lectures then Portuguese until 19:00. Morning is your only study window.' },
-  2: { label:'Tuesday',   slots:[{t:'15:15–17:00',n:'IR Lecture'},{t:'21:50',n:'Water polo'}], note:'Free morning until 15:15 — dedicated window for Econometrics review and problem set prep.' },
-  3: { label:'Wednesday', slots:[{t:'12:15–15:00',n:'EoC PBL (problem set due)'},{t:'17:00–18:00',n:'Hyrox'}], note:'EoC problem set due at 12:15. Free morning for final prep.' },
-  4: { label:'Thursday',  slots:[{t:'09:00–11:45',n:'Econometrics PBL (problem set due)'},{t:'12:15–15:00',n:'IR PBL (reading due)'},{t:'22:15',n:'Water polo'}], note:'Econometrics problem set and IR reading both due today. Very limited free time — prep should be done by Wednesday.' },
-  5: { label:'Friday',    slots:[], note:'Completely free — best day for deep work.' },
+  1: { label:'Monday',    slots:[{t:'17:00–19:00',n:'Portuguese'}], note:'Portuguese in the evening.' },
+  2: { label:'Tuesday',   slots:[{t:'21:50',n:'Water polo'}], note:'Water polo tonight.' },
+  3: { label:'Wednesday', slots:[{t:'17:00–18:00',n:'Hyrox'}], note:'Hyrox in the evening.' },
+  4: { label:'Thursday',  slots:[{t:'22:15',n:'Water polo'}], note:'Water polo tonight.' },
+  5: { label:'Friday',    slots:[], note:'Best day for deep work.' },
   6: { label:'Saturday',  slots:[{t:'22:00',n:'Water polo match'}], note:'Morning/afternoon free.' },
 };
 
-const ACADEMIC_PRESET = [
-  { id:'pre-1', title:'Draft paper',       deadline:'2026-05-15', type:'essay',        course:'Research', notes:'' },
-  { id:'pre-2', title:'IR presentation',   deadline:'2026-05-15', type:'presentation', course:'IR',       notes:'' },
-  { id:'pre-3', title:'Assignment',        deadline:'2026-05-17', type:'problem-set',  course:'',         notes:'' },
-  { id:'pre-4', title:'Peer feedback',     deadline:'2026-05-19', type:'other',        course:'',         notes:'' },
-  { id:'pre-5', title:'IR final essay',    deadline:'2026-05-24', type:'essay',        course:'IR',       notes:'Chunks: outline → intro → body → conclusion → polish' },
-  { id:'pre-6', title:'Exam week begins',  deadline:'2026-05-25', type:'other',        course:'All',      notes:'Runs 25–29 May' },
-  { id:'pre-7', title:'Research paper',    deadline:'2026-05-31', type:'essay',        course:'Research', notes:'' },
-];
+const ACADEMIC_PRESET = [];
 
 const FL_PRESET_TASKS = [
   { id:'fl-p1', title:'Build spreadsheet template',                     isMilestone:true,  targetDate:'2026-04-30', done:false, notes:'' },
@@ -937,10 +929,7 @@ const PROJECTS_PRESET = [
   },
 ];
 
-const EXAMS = [
-  { id:'exam-econ', title:'Econometrics exam',          date:'2026-05-27', course:'Econometrics' },
-  { id:'exam-eoc',  title:'Economics of Conflict exam', date:'2026-05-28', course:'EoC' },
-];
+const EXAMS = [];
 
 const EV_CATEGORY_LABEL = { race:'Race / Competition', travel:'Travel / Flight', social:'Social', appointment:'Appointment', class:'Lecture / Class / PBL', other:'Other' };
 
@@ -961,6 +950,22 @@ function migrateProjects() {
   localStorage.setItem('org_projects', JSON.stringify(projects));
 }
 migrateProjects();
+
+// One-shot clean slate for the ICS-first transition: wipe old academic tasks,
+// stale weekly-slot edits (e.g. cancellations on now-removed lectures), and any
+// previously imported ICS events so the user can re-import fresh.
+function cleanSlateV1() {
+  if (localStorage.getItem('org_clean_slate_v1')) return;
+  localStorage.setItem('org_tasks', '[]');
+  localStorage.setItem('org_schedule_edits', '{}');
+  try {
+    const evs = JSON.parse(localStorage.getItem('org_events') || '[]');
+    const kept = evs.filter(e => e.source !== 'ics');
+    localStorage.setItem('org_events', JSON.stringify(kept));
+  } catch {}
+  localStorage.setItem('org_clean_slate_v1', '1');
+}
+cleanSlateV1();
 
 // ─── State ────────────────────────────────────────────────────────────────────
 const S = {
@@ -1234,12 +1239,10 @@ ${upcomingEvents.map(ev => {
 → Any academic task due ON or AFTER an event should be treated as due the day BEFORE the event.`
     : 'PERSONAL EVENTS: None in the next 10 days.';
 
-  const hasPBL       = activeSlots.some(s => /pbl|econometrics|international relations/i.test(s.n));
-  const thursdayRule = dow === 4
-    ? hasPBL
-      ? `6. Today has back-to-back PBLs in the schedule above — this is a heavy day. Recommend nothing new; only surface what is already due today.`
-      : `6. Thursday PBLs are cancelled today — treat as a free study day and recommend the highest-priority pending task.`
-    : `6. (Thursday-specific rule — not today)`;
+  const hasPBL       = combinedSched.some(s => /pbl|problem[- ]?based/i.test(s.n));
+  const thursdayRule = hasPBL
+    ? `6. PBLs are in today's schedule — treat as a heavy day. Recommend only tasks already due today.`
+    : `6. (no PBL rule today)`;
 
   return `You are a calm, practical academic organiser. Recommend exactly ONE task.
 
@@ -1478,9 +1481,6 @@ function renderSchedule() {
     el.innerHTML = `<div class="sched-note" style="padding:2px 0">${esc(sched.note)}</div>`;
     return;
   }
-  const banner = dow === 1 && active.length >= 3
-    ? `<div style="background:var(--amber-bg);color:var(--amber);border-radius:8px;padding:9px 12px;font-size:13px;font-weight:500;margin-bottom:12px">⚠️ Heavy day — back-to-back lectures then Portuguese until 19:00. Your only study window is this morning.</div>`
-    : '';
   const slotHtml = visibleSlots.map(s => `
     <div class="sched-item${s.cancelled?' cancelled':''}" onclick="openEditModal(${dow},${s.index},'${ds}')" style="cursor:pointer">
       <span class="sched-time">${esc(s.t)}</span>
@@ -1492,7 +1492,7 @@ function renderSchedule() {
       <span class="sched-time">${esc(ev.time)}</span>
       <span class="sched-name">${esc(ev.title)}</span>
     </div>`).join('');
-  el.innerHTML = banner + slotHtml + classHtml + `<div class="sched-note">${esc(sched.note)}</div>`;
+  el.innerHTML = slotHtml + classHtml + `<div class="sched-note">${esc(sched.note)}</div>`;
 }
 
 // "12:15–14:00" -> "12:15" ; "09:00" -> "09:00"
