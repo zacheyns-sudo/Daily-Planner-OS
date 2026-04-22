@@ -929,7 +929,23 @@ const PROJECTS_PRESET = [
   },
 ];
 
-const EXAMS = [];
+const EXAMS = [
+  { title: 'Economics of Conflict exam', date: '2026-05-27', course: 'Economics of Conflict' },
+  { title: 'Econometrics exam',          date: '2026-05-28', course: 'Econometrics' },
+];
+
+// Match an imported class event on an exam date to the corresponding exam
+// (e.g. the recurring "Economics of Conflict" class on 2026-05-27 should
+// render as the exam, not a lecture). Returns the matching EXAM entry or null.
+function examForClassEvent(ev) {
+  if (!ev || ev.category !== 'class') return null;
+  const evTitle = String(ev.title || '').toLowerCase();
+  return EXAMS.find(x => {
+    if (x.date !== ev.date) return false;
+    const key = String(x.course || x.title || '').toLowerCase().split(/\s+/).filter(w => w.length >= 4);
+    return key.some(w => evTitle.includes(w));
+  }) || null;
+}
 
 const EV_CATEGORY_LABEL = { race:'Race / Competition', travel:'Travel / Flight', social:'Social', appointment:'Appointment', class:'Lecture / Class / PBL', other:'Other' };
 
@@ -1245,7 +1261,10 @@ function buildPrompt() {
   const todayClassesAll = S.events.filter(ev => ev.date === todayStr() && ev.category === 'class' && ev.time);
   const icsStartsToday  = new Set(todayClassesAll.filter(ev => ev.source === 'ics').map(ev => startOf(ev.time)));
   const activeSlots     = rawActiveSlots.filter(s => !icsStartsToday.has(startOf(s.t)));
-  const todayClasses    = todayClassesAll.map(ev => ({ t: ev.time, n: ev.title, classType: ev.classType || null }));
+  const todayClasses    = todayClassesAll.map(ev => {
+    const isExam = !!examForClassEvent(ev);
+    return { t: ev.time, n: ev.title, classType: isExam ? 'exam' : (ev.classType || null) };
+  });
   const combinedSched = [...activeSlots.map(s => ({ t: s.t, n: s.n, classType: null })), ...todayClasses];
   const schedLines = combinedSched.length ? combinedSched.map(s => `  ${s.t}: ${s.n}${s.classType ? ` [${s.classType.toUpperCase()}]` : ''}`).join('\n') : '  None — open day.';
 
@@ -1508,11 +1527,14 @@ function renderSchedule() {
       <span class="edit-hint">edit</span>
     </div>`).join('');
   const classHtml = classEvents.map(ev => {
-    const tag = ev.classType && ev.classType !== 'lecture'
-      ? ` <span class="badge b-amber" style="font-size:10px;padding:1px 6px;margin-left:6px;text-transform:uppercase">${esc(ev.classType)}</span>`
-      : '';
+    const exam = examForClassEvent(ev);
+    const tag = exam
+      ? ` <span class="badge b-exam" style="font-size:10px;padding:1px 6px;margin-left:6px;text-transform:uppercase">Exam</span>`
+      : ev.classType && ev.classType !== 'lecture'
+        ? ` <span class="badge b-amber" style="font-size:10px;padding:1px 6px;margin-left:6px;text-transform:uppercase">${esc(ev.classType)}</span>`
+        : '';
     return `
-    <div class="sched-item">
+    <div class="sched-item${exam?' exam-day':''}">
       <span class="sched-time">${esc(ev.time)}</span>
       <span class="sched-name">${esc(ev.title)}${tag}</span>
     </div>`;
@@ -1774,11 +1796,15 @@ function renderCalDetail() {
         <span class="edit-hint">edit</span>
       </div>`).join('');
     html += classEvents.map(ev => {
-      const tag = ev.classType && ev.classType !== 'lecture'
-        ? ` <span class="badge b-amber" style="font-size:10px;padding:1px 6px;text-transform:uppercase">${esc(ev.classType)}</span>`
-        : '';
+      const exam = examForClassEvent(ev);
+      const tag = exam
+        ? ` <span class="badge b-exam" style="font-size:10px;padding:1px 6px;text-transform:uppercase">Exam</span>`
+        : ev.classType && ev.classType !== 'lecture'
+          ? ` <span class="badge b-amber" style="font-size:10px;padding:1px 6px;text-transform:uppercase">${esc(ev.classType)}</span>`
+          : '';
+      const style = exam ? ' style="color:var(--exam);font-weight:600"' : '';
       return `
-      <div class="cal-detail-row">
+      <div class="cal-detail-row"${style}>
         <span style="flex:1">${esc(ev.time)} — ${esc(ev.title)}${tag}</span>
         <button class="btn-remove" onclick="removePersonalEvent('${ev.id}')">✕</button>
       </div>`;
