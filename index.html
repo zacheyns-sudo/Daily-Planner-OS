@@ -651,9 +651,12 @@ html[data-theme="dark"] .sticky-note input[type="text"] { color: #ECD9A8; }
         <div class="cal-month-label" id="cal-month-label"></div>
         <div style="display:flex;gap:6px;align-items:center">
           <button class="cal-today-btn" onclick="calGoToday()">Today</button>
+          <button class="cal-today-btn" style="background:var(--bg);color:var(--muted);border:1px solid var(--border)" onclick="openImportICS()" title="Import .ics file from Apple Calendar">Import</button>
           <button class="cal-nav-btn" onclick="calNav(1)">›</button>
         </div>
       </div>
+      <input type="file" id="ics-file-input" accept=".ics,text/calendar" style="display:none" onchange="handleICSFile(event)">
+      <div id="ics-import-preview" style="display:none;margin:10px 0 4px;padding:12px 14px;background:var(--bg);border:1px solid var(--border);border-radius:10px"></div>
       <div class="cal-weekdays">
         <div class="cal-wd">M</div><div class="cal-wd">T</div><div class="cal-wd">W</div>
         <div class="cal-wd">T</div><div class="cal-wd">F</div><div class="cal-wd">S</div><div class="cal-wd">S</div>
@@ -1801,6 +1804,226 @@ function saveCalEvent() {
   renderCalendar();
   renderUpcomingEventsList();
   renderUpcomingDeadlines();
+}
+
+// ─── ICS import (Apple Calendar .ics → S.events) ─────────────────────────────
+function openImportICS() { document.getElementById('ics-file-input').click(); }
+
+function handleICSFile(e) {
+  const f = e.target.files && e.target.files[0];
+  if (!f) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const raw    = reader.result;
+      const events = parseICS(raw);
+      const expanded = [];
+      events.forEach(ev => expandRecurrence(ev).forEach(occ => expanded.push(occ)));
+      showImportPreview(expanded);
+    } catch (err) {
+      renderImportBanner(`<div style="color:var(--danger,#c0392b);font-size:12px">Couldn't parse file: ${err.message}</div>`);
+    }
+  };
+  reader.readAsText(f);
+  e.target.value = '';
+}
+
+function renderImportBanner(html) {
+  const el = document.getElementById('ics-import-preview');
+  el.innerHTML = html;
+  el.style.display = 'block';
+}
+
+function showImportPreview(events) {
+  if (!events.length) {
+    renderImportBanner(`<div style="font-size:12px;color:var(--muted)">No events found in that file.</div>`);
+    return;
+  }
+  const recurringCount = new Set(events.filter(e => e._recurring).map(e => e.uid || e.summary)).size;
+  const dates = events.map(e => e.date).sort();
+  const first = dates[0], last = dates[dates.length - 1];
+  const existing = S.events.filter(e => e.source === 'ics').length;
+  window._pendingICSEvents = events;
+
+  renderImportBanner(`
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap">
+      <div>
+        <div style="font-size:13px;font-weight:600;margin-bottom:4px">Found ${events.length} events${recurringCount ? ` (${recurringCount} recurring series expanded)` : ''}</div>
+        <div style="font-size:12px;color:var(--muted)">Range: ${first} → ${last}${existing ? ` · ${existing} already imported from a previous file` : ''}</div>
+      </div>
+      <div style="display:flex;gap:6px">
+        ${existing ? `<button class="cal-today-btn" style="background:var(--bg);color:var(--muted);border:1px solid var(--border)" onclick="clearImportedICS()">Clear previous</button>` : ''}
+        <button class="cal-today-btn" style="background:var(--bg);color:var(--muted);border:1px solid var(--border)" onclick="cancelImportICS()">Cancel</button>
+        <button class="cal-today-btn" onclick="confirmImportICS()">Import ${events.length}</button>
+      </div>
+    </div>
+  `);
+}
+
+function cancelImportICS() {
+  window._pendingICSEvents = null;
+  document.getElementById('ics-import-preview').style.display = 'none';
+}
+
+function confirmImportICS() {
+  const pending = window._pendingICSEvents || [];
+  if (!pending.length) return;
+  const seen = new Set(S.events.filter(e => e.source === 'ics' && e.ics_uid).map(e => `${e.ics_uid}|${e.date}|${e.time}`));
+  let added = 0;
+  pending.forEach(p => {
+    const key = `${p.uid || p.summary}|${p.date}|${p.time || ''}`;
+    if (seen.has(key)) return;
+    seen.add(key);
+    S.events.push({
+      id:       'ics' + Date.now() + '_' + added,
+      title:    p.summary || '(untitled)',
+      date:     p.date,
+      category: inferCategory(p.summary || '', p.categories || ''),
+      time:     p.time || '',
+      notes:    (p.description || '').slice(0, 500),
+      source:   'ics',
+      ics_uid:  p.uid || null,
+    });
+    added++;
+  });
+  persist();
+  window._pendingICSEvents = null;
+  renderImportBanner(`<div style="font-size:12.5px;color:var(--accent,#3b82f6)">Imported ${added} events. Review them on the calendar — clear with “Import” → “Clear previous” anytime.</div>`);
+  setTimeout(() => { document.getElementById('ics-import-preview').style.display = 'none'; }, 3500);
+  renderCalendar();
+  renderUpcomingEventsList?.();
+  renderUpcomingDeadlines?.();
+}
+
+function clearImportedICS() {
+  const before = S.events.length;
+  S.events = S.events.filter(e => e.source !== 'ics');
+  persist();
+  renderCalendar();
+  renderImportBanner(`<div style="font-size:12.5px;color:var(--muted)">Removed ${before - S.events.length} previously imported events. Pick a file to import again.</div>`);
+}
+
+function inferCategory(title, cats) {
+  const t = (title + ' ' + cats).toLowerCase();
+  if (/(lecture|tutorial|seminar|lab|class|pbl|workshop|module)/.test(t)) return 'class';
+  if (/(polo|hyrox|gym|run|swim|training|workout|race)/.test(t))          return 'race';
+  if (/(flight|travel|airport)/.test(t))                                   return 'travel';
+  if (/(appt|appointment|doctor|dentist|meeting|call)/.test(t))            return 'appointment';
+  if (/(party|dinner|drinks|birthday)/.test(t))                            return 'social';
+  return 'other';
+}
+
+// ── ICS parser (handles VEVENT + RRULE FREQ=DAILY/WEEKLY/MONTHLY) ─────────────
+function parseICS(text) {
+  const unfolded = text.replace(/\r\n/g, '\n').replace(/\n[ \t]/g, '').split('\n');
+  const events = [];
+  let cur = null;
+  for (const line of unfolded) {
+    if (line === 'BEGIN:VEVENT') { cur = {}; continue; }
+    if (line === 'END:VEVENT')   { if (cur) events.push(cur); cur = null; continue; }
+    if (!cur) continue;
+    const ci = line.indexOf(':'); if (ci < 0) continue;
+    const keyPart = line.slice(0, ci), val = line.slice(ci + 1);
+    const [key, ...paramList] = keyPart.split(';');
+    const params = {};
+    paramList.forEach(p => { const [pk, pv] = p.split('='); params[pk] = pv; });
+    if (key === 'SUMMARY')          cur.summary     = unescapeICS(val);
+    else if (key === 'DESCRIPTION') cur.description = unescapeICS(val);
+    else if (key === 'DTSTART')     cur.dtstart     = parseICSDate(val, params);
+    else if (key === 'DTEND')       cur.dtend       = parseICSDate(val, params);
+    else if (key === 'RRULE')       cur.rrule       = parseRRule(val);
+    else if (key === 'UID')         cur.uid         = val;
+    else if (key === 'CATEGORIES')  cur.categories  = val;
+  }
+  return events;
+}
+function unescapeICS(s) {
+  return s.replace(/\\n/gi, '\n').replace(/\\,/g, ',').replace(/\\;/g, ';').replace(/\\\\/g, '\\');
+}
+function parseICSDate(val, params) {
+  if (params.VALUE === 'DATE' || /^\d{8}$/.test(val)) {
+    return { allDay: true, date: `${val.slice(0,4)}-${val.slice(4,6)}-${val.slice(6,8)}`, time: null, dateObj: new Date(+val.slice(0,4), +val.slice(4,6)-1, +val.slice(6,8)) };
+  }
+  const m = val.match(/^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})(Z?)/);
+  if (!m) return null;
+  const [, y, mo, d, h, mi, se, z] = m;
+  const dt = z === 'Z'
+    ? new Date(Date.UTC(+y, +mo-1, +d, +h, +mi, +se))
+    : new Date(+y, +mo-1, +d, +h, +mi, +se);
+  const pad = n => String(n).padStart(2, '0');
+  return {
+    allDay: false,
+    date: `${dt.getFullYear()}-${pad(dt.getMonth()+1)}-${pad(dt.getDate())}`,
+    time: `${pad(dt.getHours())}:${pad(dt.getMinutes())}`,
+    dateObj: dt,
+  };
+}
+function parseRRule(val) {
+  const r = {};
+  val.split(';').forEach(p => { const [k, v] = p.split('='); r[k] = v; });
+  if (r.BYDAY)    r.BYDAY    = r.BYDAY.split(',');
+  if (r.COUNT)    r.COUNT    = parseInt(r.COUNT);
+  if (r.INTERVAL) r.INTERVAL = parseInt(r.INTERVAL);
+  return r;
+}
+function expandRecurrence(ev, horizonDays) {
+  horizonDays = horizonDays || 180;
+  if (!ev.dtstart) return [];
+  const pad = n => String(n).padStart(2, '0');
+  const fmt = dt => ({ date: `${dt.getFullYear()}-${pad(dt.getMonth()+1)}-${pad(dt.getDate())}` });
+  const timeStr = ev.dtstart.allDay ? '' : ev.dtstart.time + (ev.dtend && !ev.dtend.allDay ? '–' + ev.dtend.time : '');
+  const base = { summary: ev.summary, description: ev.description, uid: ev.uid, categories: ev.categories, time: timeStr };
+
+  if (!ev.rrule) return [{ ...base, date: ev.dtstart.date }];
+
+  const start = ev.dtstart.dateObj;
+  const horizon = new Date(start); horizon.setDate(horizon.getDate() + horizonDays);
+  let until = horizon;
+  if (ev.rrule.UNTIL) {
+    const m = ev.rrule.UNTIL.match(/^(\d{4})(\d{2})(\d{2})(T(\d{2})(\d{2})(\d{2})Z?)?/);
+    if (m) {
+      const u = new Date(+m[1], +m[2]-1, +m[3], +(m[5]||23), +(m[6]||59), +(m[7]||59));
+      if (u < until) until = u;
+    }
+  }
+  const maxCount = ev.rrule.COUNT || 500;
+  const interval = ev.rrule.INTERVAL || 1;
+  const DOW = { SU:0, MO:1, TU:2, WE:3, TH:4, FR:5, SA:6 };
+  const out = [];
+
+  if (ev.rrule.FREQ === 'DAILY') {
+    const cur = new Date(start);
+    while (cur <= until && out.length < maxCount) {
+      out.push({ ...base, ...fmt(cur), _recurring: true });
+      cur.setDate(cur.getDate() + interval);
+    }
+  } else if (ev.rrule.FREQ === 'WEEKLY') {
+    const bydays = ev.rrule.BYDAY ? ev.rrule.BYDAY.map(d => DOW[d.slice(-2)]) : [start.getDay()];
+    const weekStart = new Date(start); weekStart.setHours(0,0,0,0);
+    const weekAnchorDow = weekStart.getDay();
+    // step weekStart back to the week's reference (we'll just iterate week by week from DTSTART's week)
+    while (weekStart <= until && out.length < maxCount) {
+      for (const dow of bydays.slice().sort()) {
+        const occ = new Date(weekStart);
+        const diff = (dow - weekAnchorDow + 7) % 7;
+        occ.setDate(occ.getDate() + diff);
+        if (occ < start) continue;
+        if (occ > until) continue;
+        out.push({ ...base, ...fmt(occ), _recurring: true });
+        if (out.length >= maxCount) break;
+      }
+      weekStart.setDate(weekStart.getDate() + 7 * interval);
+    }
+  } else if (ev.rrule.FREQ === 'MONTHLY') {
+    const cur = new Date(start);
+    while (cur <= until && out.length < maxCount) {
+      out.push({ ...base, ...fmt(cur), _recurring: true });
+      cur.setMonth(cur.getMonth() + interval);
+    }
+  } else {
+    out.push({ ...base, date: ev.dtstart.date });
+  }
+  return out;
 }
 
 // ─── Projects tab ─────────────────────────────────────────────────────────────
