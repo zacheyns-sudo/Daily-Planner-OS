@@ -967,23 +967,25 @@ function cleanSlateV1() {
 }
 cleanSlateV1();
 
-// Backfill: older imports landed as category:'other' with no classType. Re-run
-// the ICS classifier once so existing events show up under Schedule (not
-// Personal events) and the AI can see PBL/tutorial tags.
-function reclassifyICSv1() {
-  if (localStorage.getItem('org_reclassify_ics_v1')) return;
+// Backfill: older imports landed as category:'other' with no classType, and
+// early imports didn't capture LOCATION. Re-run the classifier so existing
+// events show up under Schedule (not Personal events) and pick up PBL tags
+// from room number. Users need to re-import once for location to become
+// available on old events — this bump handles events that already have it.
+function reclassifyICSv2() {
+  if (localStorage.getItem('org_reclassify_ics_v2')) return;
   try {
     const evs = JSON.parse(localStorage.getItem('org_events') || '[]');
     const next = evs.map(e => {
       if (e.source !== 'ics') return e;
-      const meta = classifyICSEvent(e.title || '', '', e.notes || '');
-      return { ...e, category: meta.category, classType: e.classType || meta.classType };
+      const meta = classifyICSEvent(e.title || '', '', e.notes || '', e.location || '');
+      return { ...e, category: meta.category, classType: meta.classType };
     });
     localStorage.setItem('org_events', JSON.stringify(next));
   } catch {}
-  localStorage.setItem('org_reclassify_ics_v1', '1');
+  localStorage.setItem('org_reclassify_ics_v2', '1');
 }
-reclassifyICSv1();
+reclassifyICSv2();
 
 // ─── State ────────────────────────────────────────────────────────────────────
 const S = {
@@ -1911,7 +1913,7 @@ function confirmImportICS() {
     const key = `${p.uid || p.summary}|${p.date}|${p.time || ''}`;
     if (seen.has(key)) return;
     seen.add(key);
-    const meta = classifyICSEvent(p.summary || '', p.categories || '', p.description || '');
+    const meta = classifyICSEvent(p.summary || '', p.categories || '', p.description || '', p.location || '');
     S.events.push({
       id:        'ics' + Date.now() + '_' + added,
       title:     p.summary || '(untitled)',
@@ -1920,6 +1922,7 @@ function confirmImportICS() {
       classType: meta.classType,
       time:      p.time || '',
       notes:     (p.description || '').slice(0, 500),
+      location:  p.location || '',
       source:    'ics',
       ics_uid:   p.uid || null,
     });
@@ -1952,21 +1955,31 @@ function inferCategory(title, cats) {
   return 'other';
 }
 
+// Rooms where the timetable runs PBLs rather than lectures. Used as the
+// primary signal because university calendar titles rarely distinguish
+// "Macro PBL" from "Macro Lecture" — the room does.
+const PBL_ROOMS = new Set([4, 17, 18]);
+
 // ICS imports come from an academic calendar — default to "class" unless clearly
 // non-academic. Also detects a sub-type so the planner knows PBL/tutorial days.
-function classifyICSEvent(title, cats, description) {
-  const t = (title + ' ' + cats + ' ' + description).toLowerCase();
+function classifyICSEvent(title, cats, description, location) {
+  const t = (title + ' ' + cats + ' ' + description + ' ' + (location || '')).toLowerCase();
   if (/(polo|hyrox|gym|run|swim|training|workout|race)/.test(t))         return { category: 'race',        classType: null };
   if (/(flight|travel|airport)/.test(t))                                  return { category: 'travel',      classType: null };
   if (/(doctor|dentist|gp |clinic|appointment)/.test(t))                  return { category: 'appointment', classType: null };
   if (/(party|drinks|birthday)/.test(t))                                  return { category: 'social',      classType: null };
   // Default: treat as class and tag the sub-type
   let classType = 'lecture';
+  // Priority 1: title keyword
   if (/(\bpbl\b|problem[- ]?based|problem set|problem sheet)/.test(t))    classType = 'pbl';
   else if (/(tutorial|tut\b|seminar)/.test(t))                            classType = 'tutorial';
   else if (/(\blab\b|laboratory|practical)/.test(t))                      classType = 'lab';
   else if (/workshop/.test(t))                                            classType = 'workshop';
-  else if (/(lecture|lect\b)/.test(t))                                    classType = 'lecture';
+  // Priority 2: room number (any integer in LOCATION matching PBL_ROOMS)
+  if (classType === 'lecture' && location) {
+    const nums = String(location).match(/\d+/g) || [];
+    if (nums.some(n => PBL_ROOMS.has(parseInt(n, 10)))) classType = 'pbl';
+  }
   return { category: 'class', classType };
 }
 
@@ -1991,6 +2004,7 @@ function parseICS(text) {
     else if (key === 'RRULE')       cur.rrule       = parseRRule(val);
     else if (key === 'UID')         cur.uid         = val;
     else if (key === 'CATEGORIES')  cur.categories  = val;
+    else if (key === 'LOCATION')    cur.location    = unescapeICS(val);
   }
   return events;
 }
@@ -2029,7 +2043,7 @@ function expandRecurrence(ev, horizonDays) {
   const pad = n => String(n).padStart(2, '0');
   const fmt = dt => ({ date: `${dt.getFullYear()}-${pad(dt.getMonth()+1)}-${pad(dt.getDate())}` });
   const timeStr = ev.dtstart.allDay ? '' : ev.dtstart.time + (ev.dtend && !ev.dtend.allDay ? '–' + ev.dtend.time : '');
-  const base = { summary: ev.summary, description: ev.description, uid: ev.uid, categories: ev.categories, time: timeStr };
+  const base = { summary: ev.summary, description: ev.description, uid: ev.uid, categories: ev.categories, location: ev.location, time: timeStr };
 
   if (!ev.rrule) return [{ ...base, date: ev.dtstart.date }];
 
