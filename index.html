@@ -1216,9 +1216,11 @@ function buildPrompt() {
   const fmtChunk = t => `  • [id:${t.id}] ${t.chunk} — "${t.title}"${t.course?' ('+t.course+')':''}${blockerTag(t)}`;
   const fmtLect  = t => `  • [id:${t.id}] ${t.name}`;
 
-  const activeSlots = getEffectiveSlots(dow, todayStr()).filter(s => !s.cancelled);
-  const todayClasses = S.events.filter(ev => ev.date === todayStr() && ev.category === 'class' && ev.time)
-    .map(ev => ({ t: ev.time, n: ev.title }));
+  const rawActiveSlots = getEffectiveSlots(dow, todayStr()).filter(s => !s.cancelled);
+  const todayClassesAll = S.events.filter(ev => ev.date === todayStr() && ev.category === 'class' && ev.time);
+  const icsStartsToday  = new Set(todayClassesAll.filter(ev => ev.source === 'ics').map(ev => startOf(ev.time)));
+  const activeSlots     = rawActiveSlots.filter(s => !icsStartsToday.has(startOf(s.t)));
+  const todayClasses    = todayClassesAll.map(ev => ({ t: ev.time, n: ev.title }));
   const combinedSched = [...activeSlots.map(s => ({ t: s.t, n: s.n })), ...todayClasses];
   const schedLines = combinedSched.length ? combinedSched.map(s => `  ${s.t}: ${s.n}`).join('\n') : '  None — open day.';
 
@@ -1467,17 +1469,19 @@ function renderSchedule() {
   const el     = document.getElementById('today-schedule');
   const ds     = todayStr();
   const slots  = getEffectiveSlots(dow, ds);
-  const active = slots.filter(s => !s.cancelled);
   const classEvents = S.events.filter(ev => ev.date === ds && ev.category === 'class' && ev.time);
+  const icsStarts   = new Set(classEvents.filter(ev => ev.source === 'ics').map(ev => startOf(ev.time)));
+  const visibleSlots = slots.filter(s => !icsStarts.has(startOf(s.t)));
+  const active = visibleSlots.filter(s => !s.cancelled);
 
-  if (!slots.length && !classEvents.length) {
+  if (!visibleSlots.length && !classEvents.length) {
     el.innerHTML = `<div class="sched-note" style="padding:2px 0">${esc(sched.note)}</div>`;
     return;
   }
   const banner = dow === 1 && active.length >= 3
     ? `<div style="background:var(--amber-bg);color:var(--amber);border-radius:8px;padding:9px 12px;font-size:13px;font-weight:500;margin-bottom:12px">⚠️ Heavy day — back-to-back lectures then Portuguese until 19:00. Your only study window is this morning.</div>`
     : '';
-  const slotHtml = slots.map(s => `
+  const slotHtml = visibleSlots.map(s => `
     <div class="sched-item${s.cancelled?' cancelled':''}" onclick="openEditModal(${dow},${s.index},'${ds}')" style="cursor:pointer">
       <span class="sched-time">${esc(s.t)}</span>
       <span class="sched-name">${esc(s.n)}</span>
@@ -1490,6 +1494,9 @@ function renderSchedule() {
     </div>`).join('');
   el.innerHTML = banner + slotHtml + classHtml + `<div class="sched-note">${esc(sched.note)}</div>`;
 }
+
+// "12:15–14:00" -> "12:15" ; "09:00" -> "09:00"
+function startOf(timeStr) { return String(timeStr || '').split(/[–\-]/)[0].trim(); }
 
 // ─── Upcoming deadlines ──────────────────────────────────────────────────────
 function renderUpcomingDeadlines() {
@@ -1730,9 +1737,11 @@ function renderCalDetail() {
   }
 
   const classEvents = S.events.filter(ev => ev.date === calSelected && ev.category === 'class' && ev.time);
+  const icsStarts   = new Set(classEvents.filter(ev => ev.source === 'ics').map(ev => startOf(ev.time)));
+  const visibleSlots = slots.filter(s => !icsStarts.has(startOf(s.t)));
   html += `<div class="cal-detail-section"><div class="cal-detail-label">Schedule</div>`;
-  if (slots.length || classEvents.length) {
-    html += slots.map(s => `
+  if (visibleSlots.length || classEvents.length) {
+    html += visibleSlots.map(s => `
       <div class="cal-detail-row has-action${s.cancelled?' cancelled':''}" onclick="openEditModal(${dow},${s.index},'${calSelected}')">
         <span style="flex:1">${esc(s.t)} — ${esc(s.n)}</span>
         ${s.cancelled ? `<span class="badge b-grey" style="font-size:10px;padding:1px 7px">Cancelled</span>
