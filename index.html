@@ -599,9 +599,23 @@ html[data-theme="dark"] .sticky-note input[type="text"] { color: #ECD9A8; }
     <button class="tab-btn"        id="btn-deadlines" onclick="switchTab('deadlines')">Deadlines</button>
     <button class="tab-btn"        id="btn-projects"  onclick="switchTab('projects')">Projects</button>
     <button class="tab-btn"        id="btn-tasks"     onclick="switchTab('tasks')">Tasks</button>
-    <button class="tab-btn" title="Change API key" onclick="showApiKeyCard()">Key</button>
+    <button class="tab-btn" title="Settings" onclick="toggleSettings()">⚙</button>
   </nav>
 </header>
+
+<!-- Settings panel -->
+<div id="settings-panel" style="display:none;background:var(--card);border-bottom:1px solid var(--border);padding:16px 20px">
+  <div style="font-size:11px;font-weight:600;letter-spacing:0.6px;text-transform:uppercase;color:var(--muted);margin-bottom:12px">Settings</div>
+  <div style="display:flex;gap:8px;margin-bottom:10px">
+    <input type="text" id="api-key-inline" placeholder="API key  sk-ant-..." autocomplete="off" style="flex:1;font-size:14px">
+    <button class="btn-primary" style="min-width:60px;font-size:13px;padding:8px 14px" onclick="saveApiKeyInline()">Save</button>
+  </div>
+  <div style="display:flex;gap:8px">
+    <button class="btn-ghost" style="flex:1;font-size:13px" onclick="exportData()">Export data</button>
+    <button class="btn-ghost" style="flex:1;font-size:13px" onclick="importData()">Import data</button>
+  </div>
+  <input type="file" id="import-file" accept=".json" style="display:none" onchange="handleImportFile(this)">
+</div>
 
 <main>
 
@@ -1107,11 +1121,81 @@ function switchTab(tab) {
   if (tab==='today')     { renderUpcomingDeadlines(); renderTodayTasks(); renderUpcomingEventsList(); renderEveningRecap(); }
 }
 
+// ─── Settings panel ───────────────────────────────────────────────────────────
+function toggleSettings() {
+  const panel = document.getElementById('settings-panel');
+  const open = panel.style.display === 'none';
+  panel.style.display = open ? '' : 'none';
+  if (open && S.apiKey) {
+    document.getElementById('api-key-inline').value = S.apiKey.slice(0, 14) + '…';
+  }
+}
+
+function saveApiKeyInline() {
+  const v = document.getElementById('api-key-inline').value.trim();
+  if (!v.startsWith('sk-ant-')) { alert('Anthropic API keys start with sk-ant-'); return; }
+  S.apiKey = v; persist();
+  document.getElementById('settings-panel').style.display = 'none';
+  document.getElementById('setup-card').style.display = 'none';
+  generateFocus();
+}
+
+function exportData() {
+  const data = {
+    tasks:          S.tasks,
+    projects:       S.projects,
+    events:         S.events,
+    scheduleEdits:  S.scheduleEdits,
+    sticky:         S.sticky,
+    completedLog:   S.completedLog,
+    completedTasks: S.completedTasks,
+    recaps:         S.recaps,
+    exportedAt: new Date().toISOString(),
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `daily-os-${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+}
+
+function importData() {
+  document.getElementById('import-file').click();
+}
+
+function handleImportFile(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (data.tasks)          S.tasks          = data.tasks;
+      if (data.projects)       S.projects       = data.projects;
+      if (data.events)         S.events         = data.events;
+      if (data.scheduleEdits)  S.scheduleEdits  = data.scheduleEdits;
+      if (data.sticky)         S.sticky         = data.sticky;
+      if (data.completedLog)   S.completedLog   = data.completedLog;
+      if (data.completedTasks) S.completedTasks = data.completedTasks;
+      if (data.recaps)         S.recaps         = data.recaps;
+      S.focus = null; S.focusDate = '';
+      persist();
+      renderUpcomingDeadlines();
+      renderCompletionLog();
+      renderStickyNote();
+      document.getElementById('settings-panel').style.display = 'none';
+      alert('Data imported — reload the page to see all changes.');
+    } catch {
+      alert('Invalid file — export a fresh copy and try again.');
+    }
+  };
+  reader.readAsText(file);
+  input.value = '';
+}
+
 // ─── API key ──────────────────────────────────────────────────────────────────
 function showApiKeyCard() {
-  switchTab('today');
   document.getElementById('setup-card').style.display = '';
-  document.getElementById('api-key-input').value = '';
   document.getElementById('api-key-input').focus();
 }
 function saveApiKey() {
