@@ -829,10 +829,6 @@ html[data-theme="dark"] .sticky-note input[type="text"] { color: #ECD9A8; }
       <div id="dl-exams"></div>
     </div>
     <div class="card">
-      <div class="section-head">Academic</div>
-      <div id="dl-academic"></div>
-    </div>
-    <div class="card">
       <div class="section-head">Assignments</div>
       <div id="dl-projects"></div>
     </div>
@@ -1839,50 +1835,35 @@ function renderDeadlinesTab() {
       </div>`;
   }).join('');
 
-  const acEl   = document.getElementById('dl-academic');
-  const sorted = S.tasks
-    .map(t => ({ ...t, days:daysBetween(t.deadline) }))
-    .sort((a,b) => {
-      if (!!a.done !== !!b.done) return a.done ? 1 : -1;
-      return a.days - b.days;
-    });
-
-  if (!sorted.length) {
-    acEl.innerHTML = `<div class="empty">No academic tasks. Add them in the Tasks tab.</div>`;
-  } else {
-    const TYPE_LABEL = {essay:'Essay','problem-set':'Problem set',reading:'Reading',review:'Review',presentation:'Presentation',other:'Other'};
-    acEl.innerHTML = sorted.map(t => {
-      const cls = t.done ? 'b-grey' : t.days<0 ? 'b-red' : t.days<=3 ? 'b-red' : t.days<=7 ? 'b-amber' : 'b-green';
-      const lbl = t.done ? 'Done' : t.days<0 ? 'Overdue' : t.days===0 ? 'Today' : t.days===1 ? 'Tomorrow' : `${t.days}d`;
-      return `
-        <div class="dl-item">
-          <div>
-            <div class="dl-name" style="${t.done?'text-decoration:line-through;color:var(--muted)':''}">${esc(t.title)}</div>
-            <div class="dl-sub">${fmtShort(t.deadline)}${t.course?' · '+esc(t.course):''} · ${TYPE_LABEL[t.type]||t.type}</div>
-          </div>
-          <span class="dl-days badge ${cls}">${lbl}</span>
-        </div>`;
-    }).join('');
-  }
-
   const projEl = document.getElementById('dl-projects');
-  const TYPE_LABEL_A = {essay:'Essay',presentation:'Presentation',report:'Report',project:'Project',other:'Other'};
-  const allAsgnDls = S.assignments
-    .filter(a => a.dueDate)
-    .map(a => ({ ...a, days:daysBetween(a.dueDate) }))
-    .sort((a,b) => a.days - b.days);
+  const TYPE_LABEL_ALL = {essay:'Essay','problem-set':'Problem set',reading:'Reading',review:'Review',presentation:'Presentation',report:'Report',project:'Project',other:'Other'};
 
-  if (!allAsgnDls.length) {
-    projEl.innerHTML = `<div class="empty">No assignments yet. Add them in the Assignments tab.</div>`;
+  const taskItems = S.tasks.map(t => ({
+    title: t.title, course: t.course || '', type: t.type || 'other',
+    dueDate: t.deadline, done: !!(t.done || S.completedTasks.includes(t.id)),
+    days: daysBetween(t.deadline),
+  }));
+  const asgnItems = S.assignments.filter(a => a.dueDate).map(a => ({
+    title: a.title, course: a.course || '', type: a.type || 'other',
+    dueDate: a.dueDate, done: a.done,
+    days: daysBetween(a.dueDate),
+  }));
+  const all = [...taskItems, ...asgnItems].sort((a, b) => {
+    if (!!a.done !== !!b.done) return a.done ? 1 : -1;
+    return a.days - b.days;
+  });
+
+  if (!all.length) {
+    projEl.innerHTML = `<div class="empty">No assignments yet.</div>`;
   } else {
-    projEl.innerHTML = allAsgnDls.map(a => {
+    projEl.innerHTML = all.map(a => {
       const cls = a.done ? 'b-grey' : a.days<0 ? 'b-red' : a.days<=3 ? 'b-red' : a.days<=7 ? 'b-amber' : 'b-green';
       const lbl = a.done ? 'Done' : a.days<0 ? 'Overdue' : a.days===0 ? 'Today' : a.days===1 ? 'Tomorrow' : `${a.days}d`;
       return `
         <div class="dl-item">
           <div>
             <div class="dl-name" style="${a.done?'text-decoration:line-through;color:var(--muted)':''}">${esc(a.title)}</div>
-            <div class="dl-sub">${TYPE_LABEL_A[a.type]||a.type}${a.course?' · '+esc(a.course):''} · Due ${fmtShort(a.dueDate)}</div>
+            <div class="dl-sub">${TYPE_LABEL_ALL[a.type]||a.type}${a.course?' · '+esc(a.course):''} · Due ${fmtShort(a.dueDate)}</div>
           </div>
           <span class="dl-days badge ${cls}">${lbl}</span>
         </div>`;
@@ -2383,19 +2364,33 @@ function renderProjects() { renderAssignments(); }
 function renderAssignments() {
   const el = document.getElementById('asgn-timeline');
   if (!el) return;
-  const TYPE_LABEL_A = {essay:'Essay',presentation:'Presentation',report:'Report',project:'Project',other:'Other'};
-  const sorted = [...S.assignments].sort((a,b) => {
+  const TYPE_LABEL_A = {
+    essay:'Essay', presentation:'Presentation', report:'Report', project:'Project',
+    'problem-set':'Problem set', reading:'Reading', review:'Review', other:'Other',
+  };
+
+  // Merge S.tasks (academic deadlines) and S.assignments into one unified list
+  const taskItems = S.tasks.map(t => ({
+    id: t.id, title: t.title, course: t.course || '', type: t.type || 'other',
+    dueDate: t.deadline, done: !!(t.done || S.completedTasks.includes(t.id)),
+    source: 'task', steps: [],
+  }));
+  const asgnItems = S.assignments.map(a => ({ ...a, source: 'assignment' }));
+  const all = [...taskItems, ...asgnItems].sort((a, b) => {
     if (!!a.done !== !!b.done) return a.done ? 1 : -1;
-    return (a.dueDate||'').localeCompare(b.dueDate||'');
+    return (a.dueDate || '').localeCompare(b.dueDate || '');
   });
-  if (!sorted.length) {
+
+  if (!all.length) {
     el.innerHTML = `<div class="empty">No assignments yet — add one above.</div>`;
     return;
   }
-  el.innerHTML = `<div class="asgn-timeline">${sorted.map(a => {
+  el.innerHTML = `<div class="asgn-timeline">${all.map(a => {
     const days = a.dueDate ? daysBetween(a.dueDate) : null;
     const daysCol = a.done ? 'var(--muted)' : days !== null && days <= 7 ? '#DC2626' : days !== null && days <= 14 ? 'var(--event)' : 'var(--accent)';
     const daysLbl = a.done ? 'Done' : days === null ? '' : days < 0 ? 'Overdue' : days === 0 ? 'Today' : days === 1 ? 'Tomorrow' : `${days}d`;
+    const toggleFn = a.source === 'task' ? `toggleTaskInAssignments('${a.id}')` : `toggleAssignment('${a.id}')`;
+    const removeFn = a.source === 'task' ? `removeTask('${a.id}')` : `removeAssignment('${a.id}')`;
     const stepsHtml = a.steps && a.steps.length ? `
       <div class="asgn-steps">${a.steps.map(s => {
         const sd = s.dueDate ? daysBetween(s.dueDate) : null;
@@ -2409,12 +2404,13 @@ function renderAssignments() {
           </div>`;
       }).join('')}
       </div>` : '';
-    const addStepHtml = `
+    // Only show "add step" for proper assignments (not task-sourced items)
+    const addStepHtml = a.source === 'assignment' ? `
       <div style="display:flex;gap:6px;padding:8px 0 4px;margin-top:4px">
         <input type="text" id="step-title-${a.id}" placeholder="Add a step…" style="flex:1;font-size:13px" onkeydown="if(event.key==='Enter')addAssignmentStep('${a.id}')">
         <input type="date" id="step-date-${a.id}" style="width:130px;font-size:13px">
         <button class="btn-ghost btn-sm" onclick="addAssignmentStep('${a.id}')">Add</button>
-      </div>`;
+      </div>` : '';
     return `
       <div class="asgn-node">
         <div class="asgn-node-dot ${a.done?'done':''}"></div>
@@ -2428,14 +2424,26 @@ function renderAssignments() {
           </div>
           <div class="asgn-actions">
             ${days !== null ? `<span style="font-size:12px;font-weight:600;color:${daysCol}">${daysLbl}</span>` : ''}
-            <div class="asgn-check ${a.done?'done':''}" onclick="toggleAssignment('${a.id}')"></div>
-            <button class="btn-remove" onclick="removeAssignment('${a.id}')">✕</button>
+            <div class="asgn-check ${a.done?'done':''}" onclick="${toggleFn}"></div>
+            <button class="btn-remove" onclick="${removeFn}">✕</button>
           </div>
         </div>
         ${stepsHtml}
         ${addStepHtml}
       </div>`;
   }).join('')}</div>`;
+}
+
+function toggleTaskInAssignments(id) {
+  const t = S.tasks.find(t => t.id === id);
+  if (!t) return;
+  t.done = !t.done;
+  if (t.done && !S.completedTasks.includes(id)) S.completedTasks.push(id);
+  else if (!t.done) S.completedTasks = S.completedTasks.filter(x => x !== id);
+  S.focus = null; S.focusDate = '';
+  persist();
+  renderAssignments();
+  renderUpcomingDeadlines();
 }
 
 function addAssignment() {
