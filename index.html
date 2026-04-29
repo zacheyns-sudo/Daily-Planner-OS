@@ -1167,6 +1167,12 @@ function reclassifyICSv3() {
 }
 reclassifyICSv3();
 
+// Sanitise stored API key — clear it if it contains non-ASCII (e.g. the '…' truncation bug)
+(function() {
+  const k = localStorage.getItem('org_key') || '';
+  if (k && ![...k].every(c => c.charCodeAt(0) <= 127)) localStorage.removeItem('org_key');
+})();
+
 // ─── State ────────────────────────────────────────────────────────────────────
 const S = {
   apiKey:         localStorage.getItem('org_key')                        || '',
@@ -1281,14 +1287,19 @@ function toggleSettings() {
   const panel = document.getElementById('settings-panel');
   const open = panel.style.display === 'none';
   panel.style.display = open ? 'flex' : 'none';
-  if (open && S.apiKey) {
-    document.getElementById('api-key-inline').value = S.apiKey.slice(0, 14) + '…';
+  if (open) {
+    const input = document.getElementById('api-key-inline');
+    input.value = '';
+    input.placeholder = S.apiKey ? 'sk-ant-… (saved — paste to replace)' : 'sk-ant-...';
   }
 }
 
 function saveApiKeyInline() {
   const v = document.getElementById('api-key-inline').value.trim();
-  if (!v.startsWith('sk-ant-')) { alert('Anthropic API keys start with sk-ant-'); return; }
+  if (!v) { document.getElementById('settings-panel').style.display = 'none'; return; }
+  if (!v.startsWith('sk-ant-') || ![...v].every(c => c.charCodeAt(0) <= 127)) {
+    alert('Invalid API key — paste the full key starting with sk-ant-'); return;
+  }
   S.apiKey = v; persist();
   document.getElementById('settings-panel').style.display = 'none';
   document.getElementById('setup-card').style.display = 'none';
