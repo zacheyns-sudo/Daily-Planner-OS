@@ -2714,13 +2714,19 @@ async function submitRecap() {
   const today = todayStr();
   const recentRecaps = S.recaps.slice(-5).map(r => `${fmtShort(r.date)}: ${r.entry}`).join('\n');
   const recentCompleted = S.completedLog.slice(-10).map(c => `${fmtShort(c.completedDate)}: ${c.cancelled ? '[CANCELLED] ' : ''}${c.task}${c.course ? ` (${c.course})` : ''}`).join('\n');
-  const tomorrowDow = (new Date().getDay() + 1) % 7;
-  const tomorrowSched = WEEKLY[tomorrowDow];
-  const tomorrowStr = tomorrowSched.slots.length ? tomorrowSched.slots.map(s => `${s.t} ${s.n}`).join(', ') : 'nothing scheduled';
+  const todayDow = new Date().getDay();
+  const tomorrowDow = (todayDow + 1) % 7;
+  const tomorrowDate = new Date(); tomorrowDate.setDate(tomorrowDate.getDate() + 1);
+  const tomorrowDateStr = tomorrowDate.toISOString().split('T')[0];
+  const todaySlots = getEffectiveSlots(todayDow, today).filter(s => !s.cancelled).map(s => s.n);
+  const tomorrowSlots = getEffectiveSlots(tomorrowDow, tomorrowDateStr).filter(s => !s.cancelled).map(s => s.n);
+  const todaySchedStr = todaySlots.length ? todaySlots.join(', ') : 'no scheduled commitments (or all cancelled)';
+  const tomorrowStr = tomorrowSlots.length ? tomorrowSlots.join(', ') : 'no scheduled commitments';
 
   const prompt = `You are a calm, practical coach reflecting with the user at the end of the day. Be honest, brief, and useful. No fluff.
 
 Today's date: ${fmtLong()}.
+Today's actual schedule (after any cancellations): ${todaySchedStr}.
 Today's check-in from user:
 """
 ${input}
@@ -2914,23 +2920,24 @@ function renderTodayTasks() {
   }
 
   S.tasks
-    .filter(t => !t.done)
     .map(t => ({ ...t, days: daysBetween(t.deadline) }))
     .filter(t => t.days >= 0 && t.days <= 1)
     .sort((a, b) => a.days - b.days)
     .forEach(t => {
       const sub = t.days === 0 ? 'Due today' : 'Due tomorrow';
-      items.push({ id: t.id, label: t.title, sub: `${sub}${t.course ? ' · ' + t.course : ''}`, done: S.completedTasks.includes(t.id) });
+      const done = !!(t.done || S.completedTasks.includes(t.id));
+      items.push({ id: t.id, label: t.title, sub: `${sub}${t.course ? ' · ' + t.course : ''}`, done });
     });
 
   // Assignments due today or tomorrow
   S.assignments
-    .filter(a => !a.done && a.dueDate)
+    .filter(a => a.dueDate)
     .map(a => ({ ...a, days: daysBetween(a.dueDate) }))
     .filter(a => a.days >= 0 && a.days <= 1)
     .forEach(a => {
       const sub = a.days === 0 ? 'Due today' : 'Due tomorrow';
-      items.push({ id: a.id, label: a.title, sub: `${sub}${a.course?' · '+a.course:''}`, done: S.completedTasks.includes(a.id) });
+      const done = !!(a.done || S.completedTasks.includes(a.id));
+      items.push({ id: a.id, label: a.title, sub: `${sub}${a.course?' · '+a.course:''}`, done });
     });
 
   const examToday = EXAMS.find(e => e.date === today);
