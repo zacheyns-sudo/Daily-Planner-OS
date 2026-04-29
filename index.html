@@ -331,32 +331,65 @@ button { font-family: inherit; cursor: pointer; border: none; transition: all 0.
 .task-meta  { font-size: 12px; color: var(--muted); margin-top: 2px; }
 .task-right { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
 
-/* ── Projects tab ── */
-.project-switcher { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 14px; scrollbar-width: none; }
-.project-switcher::-webkit-scrollbar { display: none; }
-.project-chip {
-  display: inline-flex; align-items: center; gap: 6px;
-  padding: 7px 14px; border-radius: 999px;
-  font-size: 13px; font-weight: 500;
-  background: var(--card); color: var(--muted);
-  border: 1px solid var(--border); cursor: pointer;
-  white-space: nowrap; flex-shrink: 0;
-  transition: all 0.12s;
+/* ── Assignments tab ── */
+.asgn-type-chip {
+  display: inline-block; font-size: 11px; font-weight: 600; letter-spacing: 0.6px;
+  text-transform: uppercase; border-radius: 20px; padding: 2px 9px;
+  background: var(--accent-bg); color: var(--accent); margin-right: 6px;
 }
-.project-chip:hover { color: var(--text); border-color: var(--muted); }
-.project-chip.active { background: var(--accent); color: white; border-color: var(--accent); }
-.project-chip.active.c-purple { background: var(--purple); border-color: var(--purple); }
-.project-chip.active.c-teal   { background: var(--teal);   border-color: var(--teal); }
-.project-chip.active.c-clay   { background: var(--clay);   border-color: var(--clay); }
-.project-chip.active.c-blue   { background: var(--blue);   border-color: var(--blue); }
-.project-chip.active.c-green  { background: var(--accent); border-color: var(--accent); }
-.project-chip.add-btn { border-style: dashed; }
-.project-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
-.pd-purple { background: var(--purple); }
-.pd-teal   { background: var(--teal); }
-.pd-clay   { background: var(--clay); }
-.pd-blue   { background: var(--blue); }
-.pd-green  { background: var(--accent); }
+.asgn-timeline { position: relative; padding-left: 28px; }
+.asgn-timeline::before {
+  content: ''; position: absolute; left: 7px; top: 8px; bottom: 8px;
+  width: 2px; background: var(--border); border-radius: 2px;
+}
+.asgn-node { position: relative; margin-bottom: 18px; }
+.asgn-node-dot {
+  position: absolute; left: -24px; top: 6px;
+  width: 12px; height: 12px; border-radius: 50%;
+  background: var(--accent); border: 2px solid var(--bg);
+  flex-shrink: 0;
+}
+.asgn-node-dot.done { background: var(--muted); }
+.asgn-header {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: 10px; padding: 14px 16px;
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius); cursor: default;
+}
+.asgn-header.done-asgn { opacity: 0.55; }
+.asgn-title-row { flex: 1; min-width: 0; }
+.asgn-name { font-size: 15px; font-weight: 600; margin-bottom: 3px; }
+.asgn-name.done { text-decoration: line-through; color: var(--muted); font-weight: 400; }
+.asgn-meta { font-size: 12px; color: var(--muted); }
+.asgn-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+.asgn-check {
+  width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--border);
+  background: var(--card); cursor: pointer; display: flex; align-items: center;
+  justify-content: center; flex-shrink: 0; transition: all 0.12s;
+}
+.asgn-check:hover { border-color: var(--accent); }
+.asgn-check.done { background: var(--accent); border-color: var(--accent); color: white; font-size: 10px; font-weight: 700; }
+.asgn-check.done::after { content: '✓'; }
+.asgn-steps { margin-top: 8px; padding-left: 4px; }
+.asgn-step {
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 12px; border-radius: 8px;
+  font-size: 13px; color: var(--text);
+  border-bottom: 1px solid var(--border);
+}
+.asgn-step:last-of-type { border-bottom: none; }
+.asgn-step-check {
+  width: 16px; height: 16px; border-radius: 4px; border: 1.5px solid var(--border);
+  background: var(--card); cursor: pointer; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.12s; font-size: 10px; font-weight: 700; color: white;
+}
+.asgn-step-check:hover { border-color: var(--accent); }
+.asgn-step-check.done { background: var(--accent); border-color: var(--accent); }
+.asgn-step-check.done::after { content: '✓'; }
+.asgn-step-label { flex: 1; min-width: 0; }
+.asgn-step-label.done { text-decoration: line-through; color: var(--muted); }
+.asgn-step-date { font-size: 11px; color: var(--muted); flex-shrink: 0; }
 
 .phase-card {
   border-radius: var(--radius);
@@ -699,7 +732,7 @@ html[data-theme="dark"] .sticky-note input[type="text"] { color: #ECD9A8; }
     <button class="sidebar-btn active" id="btn-today"     onclick="switchTab('today')">Today</button>
     <button class="sidebar-btn"        id="btn-calendar"  onclick="switchTab('calendar')">Calendar</button>
     <button class="sidebar-btn"        id="btn-deadlines" onclick="switchTab('deadlines')">Deadlines</button>
-    <button class="sidebar-btn"        id="btn-projects"  onclick="switchTab('projects')">Projects</button>
+    <button class="sidebar-btn"        id="btn-projects"  onclick="switchTab('projects')">Assignments</button>
     <button class="sidebar-btn"        id="btn-tasks"     onclick="switchTab('tasks')">Tasks</button>
     <button class="sidebar-btn"        id="btn-exams"     onclick="switchTab('exams')">Exams</button>
   </nav>
@@ -800,16 +833,46 @@ html[data-theme="dark"] .sticky-note input[type="text"] { color: #ECD9A8; }
       <div id="dl-academic"></div>
     </div>
     <div class="card">
-      <div class="section-head">Project milestones</div>
+      <div class="section-head">Assignments</div>
       <div id="dl-projects"></div>
     </div>
   </div>
 
-  <!-- ══ PROJECTS ══ -->
+  <!-- ══ ASSIGNMENTS ══ -->
   <div id="tab-projects" style="display:none">
-    <div class="tab-page-title">Projects</div>
-    <div id="project-switcher" class="project-switcher"></div>
-    <div id="projects-body"></div>
+    <div class="tab-page-title">Assignments</div>
+    <div class="card">
+      <div class="section-head">Add assignment</div>
+      <div class="form-group">
+        <label>Title</label>
+        <input type="text" id="asgn-title" placeholder="e.g. Political Theory Essay">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Course</label>
+          <input type="text" id="asgn-course" placeholder="e.g. IR301">
+        </div>
+        <div class="form-group">
+          <label>Type</label>
+          <select id="asgn-type">
+            <option value="essay">Essay</option>
+            <option value="presentation">Presentation</option>
+            <option value="report">Report</option>
+            <option value="project">Project</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Due date</label>
+        <input type="date" id="asgn-due">
+      </div>
+      <button class="btn-primary" onclick="addAssignment()" style="width:100%">Add assignment</button>
+    </div>
+    <div class="card" id="asgn-timeline-card">
+      <div class="section-head">Timeline</div>
+      <div id="asgn-timeline"></div>
+    </div>
   </div>
 
   <!-- ══ TASKS (ACADEMIC) ══ -->
@@ -951,45 +1014,6 @@ html[data-theme="dark"] .sticky-note input[type="text"] { color: #ECD9A8; }
 </div>
 
 <!-- Project editor modal -->
-<div id="project-modal" style="display:none" role="dialog" aria-modal="true">
-  <div class="modal-overlay" onclick="closeProjectModal()"></div>
-  <div class="modal-box">
-    <div class="modal-title" id="pm-title">New project</div>
-    <div class="form-group">
-      <label for="pm-name">Project name</label>
-      <input type="text" id="pm-name" placeholder="e.g. Kaya Project">
-    </div>
-    <div class="form-group">
-      <label for="pm-phase">Phase label</label>
-      <input type="text" id="pm-phase" placeholder="e.g. Discovery Phase">
-    </div>
-    <div class="form-group">
-      <label for="pm-goal">Goal</label>
-      <textarea id="pm-goal" rows="3" placeholder="What are you trying to accomplish?"></textarea>
-    </div>
-    <div class="form-row">
-      <div class="form-group">
-        <label for="pm-countlabel">Counter label (optional)</label>
-        <input type="text" id="pm-countlabel" placeholder="e.g. Products">
-      </div>
-      <div class="form-group">
-        <label for="pm-target">Target count (optional)</label>
-        <input type="text" id="pm-target" placeholder="e.g. 30" inputmode="numeric">
-      </div>
-    </div>
-    <div class="form-group">
-      <label>Accent colour</label>
-      <div class="colour-picker" id="pm-colour-picker"></div>
-    </div>
-    <div class="modal-actions">
-      <button class="btn-ghost" id="pm-delete" onclick="deleteProjectFromModal()" style="color:var(--red)">Delete</button>
-      <div class="modal-actions-right">
-        <button class="btn-ghost" onclick="closeProjectModal()">Cancel</button>
-        <button class="btn-primary" onclick="saveProjectFromModal()">Save</button>
-      </div>
-    </div>
-  </div>
-</div>
 
 <div id="sticky-note" class="sticky-note" style="display:none">
   <div class="sticky-header"><span class="sticky-title">Quick notes</span></div>
@@ -1161,6 +1185,7 @@ const S = {
   activeProject:  localStorage.getItem('org_active_project')             || 'filthy-labs',
   theme:          localStorage.getItem('org_theme')                      || 'light',
   examPlan:       JSON.parse(localStorage.getItem('org_exam_plan')       || '{}'),
+  assignments:    JSON.parse(localStorage.getItem('org_assignments')      || '[]'),
 };
 
 function persist() {
@@ -1179,6 +1204,7 @@ function persist() {
   localStorage.setItem('org_active_project',   S.activeProject);
   localStorage.setItem('org_theme',            S.theme);
   localStorage.setItem('org_exam_plan', JSON.stringify(S.examPlan));
+  localStorage.setItem('org_assignments', JSON.stringify(S.assignments));
   if (S.apiKey) localStorage.setItem('org_key', S.apiKey);
 }
 
@@ -1273,6 +1299,7 @@ function exportData() {
   const data = {
     tasks:          S.tasks,
     projects:       S.projects,
+    assignments:    S.assignments,
     events:         S.events,
     scheduleEdits:  S.scheduleEdits,
     sticky:         S.sticky,
@@ -1302,6 +1329,7 @@ function handleImportFile(input) {
       const data = JSON.parse(e.target.result);
       if (data.tasks)          S.tasks          = data.tasks;
       if (data.projects)       S.projects       = data.projects;
+      if (data.assignments)    S.assignments    = data.assignments;
       if (data.events)         S.events         = data.events;
       if (data.scheduleEdits)  S.scheduleEdits  = data.scheduleEdits;
       if (data.sticky)         S.sticky         = data.sticky;
@@ -1338,13 +1366,6 @@ function saveApiKey() {
   generateFocus();
 }
 
-// ─── Project helpers ─────────────────────────────────────────────────────────
-function getActiveProject() {
-  return S.projects.find(p => p.id === S.activeProject) || S.projects[0];
-}
-function findProjectForTask(taskId) {
-  return S.projects.find(p => p.tasks.some(t => t.id === taskId)) || null;
-}
 
 // ─── Recurring weekly problem sets (unchanged logic) ─────────────────────────
 function getRecurringPS() {
@@ -1450,22 +1471,20 @@ function buildPrompt() {
 
   const urgentAcademic = recurringPS.length > 0 || allAcademic.some(t => t.days <= 7);
 
-  // Project pending tasks across all projects
-  const projectsBlock = S.projects.map(proj => {
-    const pending = proj.tasks
-      .filter(t => !t.done && !S.completedTasks.includes(t.id))
-      .map(t => ({ ...t, days: t.targetDate ? daysBetween(t.targetDate) : 999 }))
-      .sort((a,b) => a.days - b.days);
-    if (!pending.length) return null;
-    const line = pending.map(t =>
-      `  • [id:${t.id}] [project:${proj.id}] "${t.title}" | ${t.isMilestone?'milestone':'task'}${t.targetDate?' | target '+fmtShort(t.targetDate)+' ('+t.days+'d)':''}`
-    ).join('\n');
-    return `▸ ${proj.name} — ${proj.phase}\n  Goal: ${proj.goal}\n${line}`;
-  }).filter(Boolean).join('\n\n');
+  // Upcoming assignments
+  const pendingAssignments = S.assignments
+    .filter(a => !a.done && a.dueDate)
+    .map(a => ({ ...a, days: daysBetween(a.dueDate) }))
+    .sort((a,b) => a.days - b.days);
+  const assignmentsBlock = pendingAssignments.length
+    ? pendingAssignments.map(a =>
+        `  • [id:${a.id}] "${a.title}"${a.course?' ('+a.course+')':''} | ${a.type} | due ${fmtShort(a.dueDate)} (${a.days}d)`
+      ).join('\n')
+    : null;
 
-  const projectsSection = !urgentAcademic && projectsBlock
-    ? `PERSONAL PROJECTS (recommend ONLY if all academic tiers are empty — prefer whichever project has the nearest milestone):\n${projectsBlock}`
-    : `PERSONAL PROJECTS: Do not recommend today — academic work is pending or urgent.`;
+  const projectsSection = assignmentsBlock
+    ? `UPCOMING ASSIGNMENTS:\n${assignmentsBlock}`
+    : `UPCOMING ASSIGNMENTS: None.`;
 
   const blockerTag = t => t.blocker
     ? ` ⚡ ${t.rawDays}d to deadline but effective ${t.days}d — ${EV_CATEGORY_LABEL[t.blocker.category]||t.blocker.category} "${t.blocker.title}" in ${t.blocker.days}d`
@@ -1657,18 +1676,15 @@ async function generateFocus(force=false) {
 
 function renderFocus(f) {
   const isExamDay = f.type === 'exam';
-  const proj      = f.project_id ? S.projects.find(p => p.id === f.project_id) : null;
-  const colour    = proj ? proj.colour : (isExamDay ? 'exam' : 'green');
-
-  const label = proj ? `Today's focus — ${proj.name}` : isExamDay ? 'Exam day' : "Today's focus";
-  const labelClass = proj ? colour : isExamDay ? 'exam' : '';
-  const cardClass = proj ? `project-${colour}` : isExamDay ? 'exam-day' : '';
+  const label = isExamDay ? 'Exam day' : "Today's focus";
+  const labelClass = isExamDay ? 'exam' : '';
+  const cardClass = isExamDay ? 'exam-day' : '';
 
   const ub = isExamDay             ? `<span class="badge b-exam">Exam day</span>`
            : f.urgency==='urgent'  ? `<span class="badge b-red">Urgent</span>`
            : f.urgency==='soon'    ? `<span class="badge b-amber">Due soon</span>`
            :                         `<span class="badge b-green">On track</span>`;
-  const courseBadgeClass = proj ? 'b-'+proj.colour : isExamDay ? 'b-exam' : 'b-green';
+  const courseBadgeClass = isExamDay ? 'b-exam' : 'b-green';
   const cb = f.course ? `<span class="badge ${courseBadgeClass}">${esc(f.course)}</span>` : '';
   const db = f.duration ? `<span class="badge b-grey">${esc(f.duration)}</span>` : '';
 
@@ -1696,10 +1712,8 @@ function markFocusDone() {
   if (taskId) {
     const acadMatch = S.tasks.find(t => t.id === taskId);
     if (acadMatch) acadMatch.done = true;
-    for (const proj of S.projects) {
-      const pMatch = proj.tasks.find(t => t.id === taskId);
-      if (pMatch) { pMatch.done = true; break; }
-    }
+    const asgnMatch = S.assignments.find(a => a.id === taskId);
+    if (asgnMatch) asgnMatch.done = true;
   }
 
   S.completedLog.push({ ...S.focus, completedDate: todayStr(), id: 'done-' + Date.now() });
@@ -1768,11 +1782,9 @@ function renderUpcomingDeadlines() {
   const academic = S.tasks
     .filter(t => !t.done)
     .map(t => ({ ...t, days:daysBetween(t.deadline), source:'academic' }));
-  const projTasks = S.projects.flatMap(p =>
-    p.tasks
-      .filter(t => t.targetDate && !t.done)
-      .map(t => ({ ...t, deadline:t.targetDate, days:daysBetween(t.targetDate), source:'project', projectName:p.name, projectColour:p.colour }))
-  );
+  const projTasks = S.assignments
+    .filter(a => a.dueDate && !a.done)
+    .map(a => ({ ...a, deadline:a.dueDate, days:daysBetween(a.dueDate), source:'assignment', projectName:a.course }));
   const exams = EXAMS.map(e => ({ ...e, deadline:e.date, days:daysBetween(e.date), source:'exam' }));
   const list = [...exams, ...academic, ...projTasks]
     .filter(t => t.days >= 0 && t.days <= 45)
@@ -1843,21 +1855,23 @@ function renderDeadlinesTab() {
   }
 
   const projEl = document.getElementById('dl-projects');
-  const allProjDls = S.projects.flatMap(p =>
-    p.tasks.filter(t => t.targetDate).map(t => ({ ...t, days:daysBetween(t.targetDate), projectName:p.name, projectColour:p.colour }))
-  ).sort((a,b) => a.days - b.days);
+  const TYPE_LABEL_A = {essay:'Essay',presentation:'Presentation',report:'Report',project:'Project',other:'Other'};
+  const allAsgnDls = S.assignments
+    .filter(a => a.dueDate)
+    .map(a => ({ ...a, days:daysBetween(a.dueDate) }))
+    .sort((a,b) => a.days - b.days);
 
-  if (!allProjDls.length) {
-    projEl.innerHTML = `<div class="empty">No project milestones with dates. Add them in the Projects tab.</div>`;
+  if (!allAsgnDls.length) {
+    projEl.innerHTML = `<div class="empty">No assignments yet. Add them in the Assignments tab.</div>`;
   } else {
-    projEl.innerHTML = allProjDls.map(t => {
-      const cls = t.done ? 'b-grey' : t.days<0 ? 'b-red' : t.days<=3 ? 'b-red' : t.days<=7 ? 'b-amber' : 'b-green';
-      const lbl = t.done ? 'Done' : t.days<0 ? 'Overdue' : t.days===0 ? 'Today' : t.days===1 ? 'Tomorrow' : `${t.days}d`;
+    projEl.innerHTML = allAsgnDls.map(a => {
+      const cls = a.done ? 'b-grey' : a.days<0 ? 'b-red' : a.days<=3 ? 'b-red' : a.days<=7 ? 'b-amber' : 'b-green';
+      const lbl = a.done ? 'Done' : a.days<0 ? 'Overdue' : a.days===0 ? 'Today' : a.days===1 ? 'Tomorrow' : `${a.days}d`;
       return `
         <div class="dl-item">
           <div>
-            <div class="dl-name" style="${t.done?'text-decoration:line-through;color:var(--muted)':''}">${t.isMilestone?'★ ':''}${esc(t.title)}</div>
-            <div class="dl-sub">${esc(t.projectName)} · Target: ${fmtShort(t.targetDate)}</div>
+            <div class="dl-name" style="${a.done?'text-decoration:line-through;color:var(--muted)':''}">${esc(a.title)}</div>
+            <div class="dl-sub">${TYPE_LABEL_A[a.type]||a.type}${a.course?' · '+esc(a.course):''} · Due ${fmtShort(a.dueDate)}</div>
           </div>
           <span class="dl-days badge ${cls}">${lbl}</span>
         </div>`;
@@ -1893,7 +1907,7 @@ function renderCalendar() {
   const dlMap = {};
   const addToDlMap = (ds, item) => { if (!ds) return; if (!dlMap[ds]) dlMap[ds] = []; dlMap[ds].push(item); };
   S.tasks.forEach(t => addToDlMap(t.deadline, { ...t, isProject:false }));
-  S.projects.forEach(p => p.tasks.filter(t => t.targetDate && !t.done).forEach(t => addToDlMap(t.targetDate, { ...t, isProject:true })));
+  S.assignments.filter(a => a.dueDate).forEach(a => addToDlMap(a.dueDate, { ...a, isProject:true, title: a.title }));
   S.events.forEach(ev => addToDlMap(ev.date, { ...ev, isEvent:true }));
 
   let html = '';
@@ -1964,9 +1978,7 @@ function renderCalDetail() {
 
   const dls = [
     ...S.tasks.map(t => ({ ...t, isProject:false, isExam:false })).filter(t => t.deadline === calSelected),
-    ...S.projects.flatMap(p =>
-      p.tasks.filter(t => t.targetDate === calSelected).map(t => ({ ...t, isProject:true, isExam:false, projectName:p.name, projectColour:p.colour }))
-    ),
+    ...S.assignments.filter(a => a.dueDate === calSelected).map(a => ({ ...a, isProject:true, isExam:false, projectName:a.course })),
     ...EXAMS.filter(e => e.date === calSelected).map(e => ({ ...e, deadline:e.date, isProject:false, isExam:true })),
   ];
 
@@ -2355,292 +2367,128 @@ function expandRecurrence(ev, horizonDays) {
   return out;
 }
 
-// ─── Projects tab ─────────────────────────────────────────────────────────────
-function renderProjects() {
-  const switcher = document.getElementById('project-switcher');
-  const body     = document.getElementById('projects-body');
-
-  switcher.innerHTML = S.projects.map(p => `
-    <button class="project-chip ${p.id === S.activeProject ? 'active c-'+p.colour : ''}" onclick="switchProject('${p.id}')">
-      <span class="project-dot pd-${p.colour}"></span>
-      ${esc(p.name)}
-    </button>
-  `).join('') + `
-    <button class="project-chip add-btn" onclick="openProjectModal(null)">+ New project</button>
-  `;
-
-  const proj = getActiveProject();
-  if (!proj) {
-    body.innerHTML = `<div class="card"><div class="empty">Create a project to get started.</div></div>`;
+// ─── Assignments tab ──────────────────────────────────────────────────────────
+function renderProjects() { renderAssignments(); }
+function renderAssignments() {
+  const el = document.getElementById('asgn-timeline');
+  if (!el) return;
+  const TYPE_LABEL_A = {essay:'Essay',presentation:'Presentation',report:'Report',project:'Project',other:'Other'};
+  const sorted = [...S.assignments].sort((a,b) => {
+    if (!!a.done !== !!b.done) return a.done ? 1 : -1;
+    return (a.dueDate||'').localeCompare(b.dueDate||'');
+  });
+  if (!sorted.length) {
+    el.innerHTML = `<div class="empty">No assignments yet — add one above.</div>`;
     return;
   }
-
-  const doneCount = proj.tasks.filter(t => t.done).length;
-  const hasCounter = !!proj.countLabel;
-  const counterBlock = hasCounter ? `
-    <div class="product-counter">
-      <div class="product-counter-label">${esc(proj.countLabel)}</div>
-      <button class="counter-btn c-${proj.colour}" onclick="updateProjectCount(-1)">−</button>
-      <div class="counter-num c-${proj.colour}">${proj.currentCount || 0}</div>
-      <button class="counter-btn c-${proj.colour}" onclick="updateProjectCount(1)">+</button>
-      ${proj.targetCount ? `<span style="font-size:12px;color:var(--muted)">/&nbsp;${proj.targetCount} goal</span>` : ''}
-    </div>
-  ` : '';
-
-  const items = [
-    ...proj.tasks.filter(t => t.isMilestone).sort((a,b) => {
-      if (a.done !== b.done) return a.done ? 1 : -1;
-      if (a.targetDate && b.targetDate) return a.targetDate.localeCompare(b.targetDate);
-      return a.targetDate ? -1 : 1;
-    }),
-    ...proj.tasks.filter(t => !t.isMilestone).sort((a,b) => a.done===b.done ? 0 : a.done ? 1 : -1),
-  ];
-
-  const taskList = items.length
-    ? items.map(t => {
-        const datePart = t.targetDate ? ` · Target: ${fmtShort(t.targetDate)}` : '';
-        const typePart = t.isMilestone ? '★ Milestone' : 'Task';
+  el.innerHTML = `<div class="asgn-timeline">${sorted.map(a => {
+    const days = a.dueDate ? daysBetween(a.dueDate) : null;
+    const daysCol = a.done ? 'var(--muted)' : days !== null && days <= 7 ? '#DC2626' : days !== null && days <= 14 ? 'var(--event)' : 'var(--accent)';
+    const daysLbl = a.done ? 'Done' : days === null ? '' : days < 0 ? 'Overdue' : days === 0 ? 'Today' : days === 1 ? 'Tomorrow' : `${days}d`;
+    const stepsHtml = a.steps && a.steps.length ? `
+      <div class="asgn-steps">${a.steps.map(s => {
+        const sd = s.dueDate ? daysBetween(s.dueDate) : null;
+        const sdLbl = s.done ? '' : sd === null ? '' : sd < 0 ? ' · overdue' : sd === 0 ? ' · today' : ` · ${sd}d`;
         return `
-          <div class="proj-item">
-            <div class="proj-check c-${proj.colour} ${t.done?'done':''}" onclick="toggleProjectTask('${proj.id}','${t.id}')"></div>
-            <div class="proj-info">
-              <div class="proj-title ${t.done?'done':''}">${t.isMilestone?`<strong>${esc(t.title)}</strong>`:esc(t.title)}</div>
-              <div class="proj-meta">${typePart}${datePart}</div>
-            </div>
-            <button class="btn-remove" onclick="removeProjectTask('${proj.id}','${t.id}')">✕</button>
+          <div class="asgn-step">
+            <div class="asgn-step-check ${s.done?'done':''}" onclick="toggleAssignmentStep('${a.id}','${s.id}')"></div>
+            <span class="asgn-step-label ${s.done?'done':''}">${esc(s.title)}</span>
+            <span class="asgn-step-date">${s.dueDate?fmtShort(s.dueDate):''}${sdLbl}</span>
+            <button class="btn-remove" onclick="removeAssignmentStep('${a.id}','${s.id}')">✕</button>
           </div>`;
-      }).join('')
-    : `<div class="empty">No tasks yet — add one above.</div>`;
-
-  const logList = proj.log.length
-    ? [...proj.log].reverse().map(l => `
-      <div class="log-item">
-        <div class="log-date">${fmtShort(l.date)}</div>
-        <div class="log-entry">${esc(l.entry)}</div>
-        <button class="btn-remove" onclick="removeProjectLog('${proj.id}','${l.id}')">✕</button>
-      </div>`).join('')
-    : `<div class="empty">Nothing logged yet — use the quick log above.</div>`;
-
-  body.innerHTML = `
-    <div class="phase-card c-${proj.colour}">
-      <div class="phase-header">
-        <span class="phase-tag c-${proj.colour}">${esc(proj.name)} — ${esc(proj.phase || '')}</span>
-        <button class="btn-ghost btn-sm" onclick="openProjectModal('${proj.id}')">Edit</button>
-      </div>
-      <div class="phase-title">${esc(proj.goal ? proj.goal.split('.')[0] : proj.name)}</div>
-      ${proj.goal ? `<div class="phase-goal">${esc(proj.goal)}</div>` : ''}
-      <div class="phase-stats">
-        <div class="phase-stat">
-          <div class="phase-stat-num c-${proj.colour}">${doneCount}</div>
-          <div class="phase-stat-lbl">tasks done</div>
+      }).join('')}
+      </div>` : '';
+    const addStepHtml = `
+      <div style="display:flex;gap:6px;padding:8px 0 4px;margin-top:4px">
+        <input type="text" id="step-title-${a.id}" placeholder="Add a step…" style="flex:1;font-size:13px" onkeydown="if(event.key==='Enter')addAssignmentStep('${a.id}')">
+        <input type="date" id="step-date-${a.id}" style="width:130px;font-size:13px">
+        <button class="btn-ghost btn-sm" onclick="addAssignmentStep('${a.id}')">Add</button>
+      </div>`;
+    return `
+      <div class="asgn-node">
+        <div class="asgn-node-dot ${a.done?'done':''}"></div>
+        <div class="asgn-header ${a.done?'done-asgn':''}">
+          <div class="asgn-title-row">
+            <div class="asgn-name ${a.done?'done':''}">${esc(a.title)}</div>
+            <div class="asgn-meta">
+              <span class="asgn-type-chip">${TYPE_LABEL_A[a.type]||a.type}</span>
+              ${a.course?esc(a.course)+' · ':''}${a.dueDate?'Due '+fmtShort(a.dueDate):''}
+            </div>
+          </div>
+          <div class="asgn-actions">
+            ${days !== null ? `<span style="font-size:12px;font-weight:600;color:${daysCol}">${daysLbl}</span>` : ''}
+            <div class="asgn-check ${a.done?'done':''}" onclick="toggleAssignment('${a.id}')"></div>
+            <button class="btn-remove" onclick="removeAssignment('${a.id}')">✕</button>
+          </div>
         </div>
-        <div class="phase-stat">
-          <div class="phase-stat-num c-${proj.colour}">${proj.log.length}</div>
-          <div class="phase-stat-lbl">log entries</div>
-        </div>
-      </div>
-      ${counterBlock}
-    </div>
-
-    <div class="card">
-      <div class="section-head">Add task or milestone</div>
-      <div class="form-group">
-        <label>Title</label>
-        <input type="text" id="proj-title" placeholder="e.g. Research 5 more products">
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label>Target date (optional)</label>
-          <input type="date" id="proj-date">
-        </div>
-        <div class="form-group">
-          <label>Type</label>
-          <select id="proj-type">
-            <option value="task">Task</option>
-            <option value="milestone">Milestone</option>
-          </select>
-        </div>
-      </div>
-      <button class="btn-primary" onclick="addProjectTask('${proj.id}')" style="width:100%">Add</button>
-    </div>
-
-    <div class="card">
-      <div class="section-head">Quick log</div>
-      <p style="font-size:13px;color:var(--muted);margin-bottom:12px">Jot down what you just did, learned, or noticed.</p>
-      <div style="display:flex;gap:8px">
-        <input type="text" id="proj-log-input" placeholder="e.g. Added 3 products, noticed a gap in Sennheiser" style="flex:1" onkeydown="if(event.key==='Enter')addProjectLog('${proj.id}')">
-        <button class="btn-primary" onclick="addProjectLog('${proj.id}')">Log</button>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="section-head">Tasks &amp; milestones</div>
-      ${taskList}
-    </div>
-
-    <div class="card">
-      <div class="section-head">Activity log</div>
-      ${logList}
-    </div>
-  `;
+        ${stepsHtml}
+        ${addStepHtml}
+      </div>`;
+  }).join('')}</div>`;
 }
 
-function switchProject(id) {
-  S.activeProject = id;
-  persist();
-  renderProjects();
-}
-
-function toggleProjectTask(projId, taskId) {
-  const proj = S.projects.find(p => p.id === projId);
-  if (!proj) return;
-  const t = proj.tasks.find(t => t.id === taskId);
-  if (!t) return;
-  t.done = !t.done;
+function addAssignment() {
+  const title = document.getElementById('asgn-title').value.trim();
+  const course = document.getElementById('asgn-course').value.trim();
+  const type  = document.getElementById('asgn-type').value;
+  const due   = document.getElementById('asgn-due').value;
+  if (!title) { document.getElementById('asgn-title').focus(); return; }
+  S.assignments.push({ id:'asgn-'+Date.now(), title, course, type, dueDate:due, done:false, steps:[] });
   S.focus = null; S.focusDate = '';
   persist();
-  renderProjects();
+  document.getElementById('asgn-title').value = '';
+  document.getElementById('asgn-course').value = '';
+  document.getElementById('asgn-due').value = '';
+  renderAssignments();
 }
 
-function removeProjectTask(projId, taskId) {
-  const proj = S.projects.find(p => p.id === projId);
-  if (!proj) return;
-  const t = proj.tasks.find(t => t.id === taskId);
-  if (t) {
-    S.completedLog.push({
-      id: 'cancelled-' + Date.now(),
-      task: t.title,
-      course: proj.name,
-      category: 'project',
-      type: t.isMilestone ? 'milestone' : 'task',
-      urgency: '',
-      completedDate: todayStr(),
-      cancelled: true,
-    });
-  }
-  proj.tasks = proj.tasks.filter(t => t.id !== taskId);
+function toggleAssignment(id) {
+  const a = S.assignments.find(a => a.id === id);
+  if (!a) return;
+  a.done = !a.done;
   S.focus = null; S.focusDate = '';
   persist();
-  renderProjects();
-  renderCompletionLog();
+  renderAssignments();
+  renderUpcomingDeadlines();
 }
 
-function addProjectTask(projId) {
-  const proj = S.projects.find(p => p.id === projId);
-  if (!proj) return;
-  const title = document.getElementById('proj-title').value.trim();
-  const date  = document.getElementById('proj-date').value;
-  const type  = document.getElementById('proj-type').value;
-  if (!title) { document.getElementById('proj-title').focus(); return; }
-
-  proj.tasks.push({ id:'pt-'+Date.now(), title, isMilestone:type==='milestone', targetDate:date, done:false, notes:'' });
+function removeAssignment(id) {
+  S.assignments = S.assignments.filter(a => a.id !== id);
   S.focus = null; S.focusDate = '';
   persist();
-  renderProjects();
+  renderAssignments();
+  renderUpcomingDeadlines();
 }
 
-function addProjectLog(projId) {
-  const proj = S.projects.find(p => p.id === projId);
-  if (!proj) return;
-  const el = document.getElementById('proj-log-input');
-  const entry = el.value.trim();
-  if (!entry) return;
-  proj.log.push({ id:'log-'+Date.now(), date:todayStr(), entry });
+function addAssignmentStep(asgnId) {
+  const a = S.assignments.find(a => a.id === asgnId);
+  if (!a) return;
+  const title = document.getElementById('step-title-'+asgnId)?.value.trim();
+  const date  = document.getElementById('step-date-'+asgnId)?.value;
+  if (!title) return;
+  a.steps.push({ id:'step-'+Date.now(), title, dueDate:date||'', done:false });
   persist();
-  renderProjects();
+  renderAssignments();
 }
 
-function removeProjectLog(projId, logId) {
-  const proj = S.projects.find(p => p.id === projId);
-  if (!proj) return;
-  proj.log = proj.log.filter(l => l.id !== logId);
+function toggleAssignmentStep(asgnId, stepId) {
+  const a = S.assignments.find(a => a.id === asgnId);
+  if (!a) return;
+  const s = a.steps.find(s => s.id === stepId);
+  if (!s) return;
+  s.done = !s.done;
   persist();
-  renderProjects();
+  renderAssignments();
 }
 
-function updateProjectCount(delta) {
-  const proj = getActiveProject();
-  if (!proj) return;
-  proj.currentCount = Math.max(0, (proj.currentCount || 0) + delta);
+function removeAssignmentStep(asgnId, stepId) {
+  const a = S.assignments.find(a => a.id === asgnId);
+  if (!a) return;
+  a.steps = a.steps.filter(s => s.id !== stepId);
   persist();
-  renderProjects();
+  renderAssignments();
 }
 
-// ─── Project editor modal ────────────────────────────────────────────────────
-let _pmColour = 'green';
-function openProjectModal(id) {
-  _editingProject = id;
-  const isEdit = !!id;
-  document.getElementById('pm-title').textContent = isEdit ? 'Edit project' : 'New project';
-  document.getElementById('pm-delete').style.display = isEdit && S.projects.length > 1 ? '' : 'none';
-
-  const proj = isEdit ? S.projects.find(p => p.id === id) : null;
-  document.getElementById('pm-name').value        = proj?.name || '';
-  document.getElementById('pm-phase').value       = proj?.phase || '';
-  document.getElementById('pm-goal').value        = proj?.goal || '';
-  document.getElementById('pm-countlabel').value  = proj?.countLabel || '';
-  document.getElementById('pm-target').value      = proj?.targetCount || '';
-  _pmColour = proj?.colour || 'green';
-
-  // Render colour picker
-  document.getElementById('pm-colour-picker').innerHTML = COLOUR_OPTIONS.map(c => `
-    <div class="colour-swatch sw-${c} ${c===_pmColour?'selected':''}" onclick="pickPmColour('${c}')" title="${COLOUR_LABEL[c]}"></div>
-  `).join('');
-
-  document.getElementById('project-modal').style.display = '';
-  document.getElementById('pm-name').focus();
-}
-function pickPmColour(c) {
-  _pmColour = c;
-  document.querySelectorAll('#pm-colour-picker .colour-swatch').forEach(el => {
-    el.classList.toggle('selected', el.classList.contains('sw-'+c));
-  });
-}
-function closeProjectModal() {
-  document.getElementById('project-modal').style.display = 'none';
-  _editingProject = null;
-}
-function saveProjectFromModal() {
-  const name       = document.getElementById('pm-name').value.trim();
-  const phase      = document.getElementById('pm-phase').value.trim();
-  const goal       = document.getElementById('pm-goal').value.trim();
-  const countLabel = document.getElementById('pm-countlabel').value.trim();
-  const targetRaw  = document.getElementById('pm-target').value.trim();
-  const targetCount = parseInt(targetRaw) || 0;
-  if (!name) { document.getElementById('pm-name').focus(); return; }
-
-  if (_editingProject) {
-    const proj = S.projects.find(p => p.id === _editingProject);
-    if (proj) {
-      proj.name = name; proj.phase = phase; proj.goal = goal;
-      proj.countLabel = countLabel; proj.targetCount = targetCount;
-      proj.colour = _pmColour;
-    }
-  } else {
-    const id = 'proj-' + Date.now();
-    S.projects.push({
-      id, name, colour: _pmColour, phase, goal,
-      countLabel, targetCount, currentCount: 0,
-      tasks: [], log: [],
-    });
-    S.activeProject = id;
-  }
-  S.focus = null; S.focusDate = '';
-  persist();
-  closeProjectModal();
-  renderProjects();
-}
-function deleteProjectFromModal() {
-  if (!_editingProject) return;
-  if (S.projects.length <= 1) { alert('At least one project must remain.'); return; }
-  if (!confirm('Delete this project and all its tasks and log entries?')) return;
-  S.projects = S.projects.filter(p => p.id !== _editingProject);
-  if (S.activeProject === _editingProject) S.activeProject = S.projects[0].id;
-  S.focus = null; S.focusDate = '';
-  persist();
-  closeProjectModal();
-  renderProjects();
-}
 
 // ─── Personal events ─────────────────────────────────────────────────────────
 function removePersonalEvent(id) {
@@ -3095,7 +2943,7 @@ function resetEventToDefault() {
 }
 
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') { closeEditModal(); closeProjectModal(); }
+  if (e.key === 'Escape') { closeEditModal(); }
 });
 
 // ─── Tasks for today ──────────────────────────────────────────────────────────
@@ -3122,17 +2970,15 @@ function renderTodayTasks() {
       items.push({ id: t.id, label: t.title, sub: `${sub}${t.course ? ' · ' + t.course : ''}`, done: S.completedTasks.includes(t.id) });
     });
 
-  // Project tasks due today or tomorrow
-  S.projects.forEach(p => {
-    p.tasks
-      .filter(t => !t.done && t.targetDate)
-      .map(t => ({ ...t, days: daysBetween(t.targetDate) }))
-      .filter(t => t.days >= 0 && t.days <= 1)
-      .forEach(t => {
-        const sub = t.days === 0 ? 'Due today' : 'Due tomorrow';
-        items.push({ id: t.id, label: t.title, sub: `${sub} · ${p.name}`, done: S.completedTasks.includes(t.id) });
-      });
-  });
+  // Assignments due today or tomorrow
+  S.assignments
+    .filter(a => !a.done && a.dueDate)
+    .map(a => ({ ...a, days: daysBetween(a.dueDate) }))
+    .filter(a => a.days >= 0 && a.days <= 1)
+    .forEach(a => {
+      const sub = a.days === 0 ? 'Due today' : 'Due tomorrow';
+      items.push({ id: a.id, label: a.title, sub: `${sub}${a.course?' · '+a.course:''}`, done: S.completedTasks.includes(a.id) });
+    });
 
   const examToday = EXAMS.find(e => e.date === today);
   if (examToday) items.push({ id: examToday.id, label: examToday.title, sub: 'Today — go execute', done: false });
@@ -3157,18 +3003,14 @@ function toggleTodayTask(id) {
     S.completedTasks = S.completedTasks.filter(x => x !== id);
     const t = S.tasks.find(t => t.id === id);
     if (t) t.done = false;
-    for (const proj of S.projects) {
-      const pt = proj.tasks.find(t => t.id === id);
-      if (pt) { pt.done = false; break; }
-    }
+    const a = S.assignments.find(a => a.id === id);
+    if (a) a.done = false;
   } else {
     if (!S.completedTasks.includes(id)) S.completedTasks.push(id);
     const t = S.tasks.find(t => t.id === id);
     if (t) t.done = true;
-    for (const proj of S.projects) {
-      const pt = proj.tasks.find(t => t.id === id);
-      if (pt) { pt.done = true; break; }
-    }
+    const a = S.assignments.find(a => a.id === id);
+    if (a) a.done = true;
   }
   persist();
   renderTodayTasks();
