@@ -2652,14 +2652,22 @@ function removePersonalEvent(id) {
   renderCalendar();
 }
 
+function prunePastEvents() {
+  const today = todayStr();
+  const before = S.events.length;
+  S.events = S.events.filter(e => e.date >= today);
+  if (S.events.length !== before) persist();
+}
+
 function renderUpcomingEventsList() {
+  prunePastEvents();
   const el     = document.getElementById('upcoming-events-list');
   const sorted = [...S.events].sort((a,b) => a.date.localeCompare(b.date));
   if (!sorted.length) { el.innerHTML = `<div class="empty" style="padding:4px 0 2px">No events added yet.</div>`; return; }
   el.innerHTML = sorted.map(ev => {
     const days = daysBetween(ev.date);
-    const col  = days < 0 ? 'var(--muted)' : days <= 3 ? 'var(--event)' : 'var(--text)';
-    const lbl  = days < 0 ? 'Past' : days === 0 ? 'Today' : days === 1 ? 'Tomorrow' : `${days}d`;
+    const col  = days <= 3 ? 'var(--event)' : 'var(--text)';
+    const lbl  = days === 0 ? 'Today' : days === 1 ? 'Tomorrow' : `${days}d`;
     return `
       <div class="task-item">
         <div style="flex:1;min-width:0">
@@ -3290,6 +3298,7 @@ function removeExamTask(ds, taskId) {
 }
 
 // ─── Boot ─────────────────────────────────────────────────────────────────────
+prunePastEvents();
 applyTheme();
 document.getElementById('date-display').textContent = fmtLong();
 document.getElementById('today-page-title').textContent = (() => { const n = new Date(); return DAYS[n.getDay()]; })();
