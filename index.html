@@ -79,65 +79,89 @@ body {
   transition: background 0.25s, color 0.25s;
 }
 
-/* ── Header ── */
-header {
+/* ── App layout ── */
+.app-layout { display: flex; min-height: 100vh; }
+
+/* ── Sidebar ── */
+.sidebar {
+  width: 210px; flex-shrink: 0;
   background: var(--card);
-  border-bottom: 1px solid var(--border);
-  padding: 14px 20px 0;
-  position: sticky;
-  top: 0;
-  z-index: 20;
+  border-right: 1px solid var(--border);
+  position: fixed; top: 0; left: 0; height: 100vh;
+  display: flex; flex-direction: column;
+  padding: 20px 10px 16px;
+  z-index: 25;
   transition: background 0.25s, border-color 0.25s;
+  overflow-y: auto;
 }
-.header-top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding-bottom: 0;
+.sidebar-brand {
+  padding: 4px 8px 18px;
+  border-bottom: 1px solid var(--border);
   margin-bottom: 10px;
-  gap: 10px;
 }
-header h1 { font-size: 15px; font-weight: 700; letter-spacing: -0.3px; color: var(--accent); }
+.sidebar-brand h1 { font-size: 15px; font-weight: 700; letter-spacing: -0.3px; color: var(--accent); }
 .sub { font-size: 12px; font-weight: 500; color: var(--muted); margin-top: 2px; letter-spacing: 0.1px; }
-.header-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.sidebar-nav { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.sidebar-footer {
+  display: flex; flex-direction: column; gap: 2px;
+  padding-top: 10px; border-top: 1px solid var(--border); margin-top: 8px;
+}
+.sidebar-btn {
+  display: flex; align-items: center; width: 100%;
+  padding: 9px 12px; border: none; border-radius: 8px;
+  background: transparent; color: var(--muted);
+  font-size: 14px; font-weight: 500; font-family: inherit;
+  text-align: left; cursor: pointer; transition: all 0.12s;
+}
+.sidebar-btn:hover { background: var(--bg); color: var(--text); }
+.sidebar-btn.active { background: var(--accent-bg); color: var(--accent); font-weight: 600; }
+.sidebar-theme {
+  width: 100%; padding: 9px 12px; border-radius: 8px;
+  border: none; background: transparent; color: var(--muted);
+  font-size: 14px; font-family: inherit; text-align: left;
+  cursor: pointer; transition: all 0.12s;
+}
+.sidebar-theme:hover { background: var(--bg); color: var(--text); }
 
-.theme-toggle {
-  width: 32px; height: 32px; border-radius: 50%;
-  border: 1px solid var(--border); background: var(--bg);
-  display: inline-flex; align-items: center; justify-content: center;
-  cursor: pointer; font-size: 14px; color: var(--muted);
-  transition: all 0.15s;
-}
-.theme-toggle:hover { border-color: var(--accent); color: var(--accent); }
+/* ── Content area ── */
+.content-area { margin-left: 210px; flex: 1; min-width: 0; }
 
-.tab-bar {
-  display: flex;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-  border-top: 1px solid var(--border);
+/* ── Settings overlay ── */
+.settings-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.4);
+  z-index: 100;
+  display: flex; align-items: center; justify-content: center;
+  backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px);
 }
-.tab-bar::-webkit-scrollbar { display: none; }
-.tab-btn {
-  padding: 10px 16px;
-  border: none;
-  border-bottom: 2px solid transparent;
-  font-size: 13px;
-  font-weight: 500;
-  cursor: pointer;
-  background: transparent;
-  color: var(--muted);
-  font-family: inherit;
-  white-space: nowrap;
-  flex-shrink: 0;
-  transition: all 0.12s;
+.settings-modal {
+  background: var(--card); border-radius: var(--radius);
+  border: 1px solid var(--border);
+  padding: 24px; width: min(380px, calc(100vw - 32px));
+  box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+  animation: slideIn 0.18s ease;
 }
-.tab-btn:hover { color: var(--text); }
-.tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
-.tab-icon { font-size: 15px; padding: 10px 14px; }
+.settings-modal-title { font-size: 17px; font-weight: 700; margin-bottom: 18px; letter-spacing: -0.2px; }
+
+/* ── Mobile: bottom nav ── */
+@media (max-width: 680px) {
+  .sidebar {
+    width: 100%; height: auto;
+    top: auto; bottom: 0;
+    flex-direction: row; align-items: center;
+    border-right: none; border-top: 1px solid var(--border);
+    padding: 6px 4px; overflow-x: auto; overflow-y: visible;
+  }
+  .sidebar-brand { display: none; }
+  .sidebar-nav { flex-direction: row; gap: 0; flex: 1; }
+  .sidebar-footer { flex-direction: row; border-top: none; padding-top: 0; margin-top: 0; border-left: 1px solid var(--border); padding-left: 4px; }
+  .sidebar-btn { padding: 8px 10px; font-size: 12px; white-space: nowrap; border-radius: 6px; }
+  .sidebar-theme { width: auto; padding: 8px 10px; font-size: 12px; white-space: nowrap; border-radius: 6px; }
+  .content-area { margin-left: 0; margin-bottom: 58px; }
+}
 
 /* ── Layout ── */
-main { max-width: 640px; margin: 0 auto; padding: 24px 16px 60px; }
+main { max-width: 680px; margin: 0 auto; padding: 32px 24px 60px; }
 
 /* ── Page titles ── */
 .tab-page-title {
@@ -664,43 +688,29 @@ html[data-theme="dark"] .sticky-note input[type="text"] { color: #ECD9A8; }
 </style>
 </head>
 <body>
+<div class="app-layout">
 
-<header>
-  <div class="header-top">
-    <div>
-      <h1>Daily OS</h1>
-      <div class="sub" id="date-display"></div>
-    </div>
-    <div class="header-actions">
-      <button id="install-btn" class="btn-install" style="display:none" onclick="installApp()">Install app</button>
-      <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" title="Toggle dark mode">◐</button>
-    </div>
+<aside class="sidebar">
+  <div class="sidebar-brand">
+    <h1>Daily OS</h1>
+    <div class="sub" id="date-display"></div>
   </div>
-  <nav class="tab-bar">
-    <button class="tab-btn active" id="btn-today"     onclick="switchTab('today')">Today</button>
-    <button class="tab-btn"        id="btn-calendar"  onclick="switchTab('calendar')">Calendar</button>
-    <button class="tab-btn"        id="btn-deadlines" onclick="switchTab('deadlines')">Deadlines</button>
-    <button class="tab-btn"        id="btn-projects"  onclick="switchTab('projects')">Projects</button>
-    <button class="tab-btn"        id="btn-tasks"     onclick="switchTab('tasks')">Tasks</button>
-    <button class="tab-btn"        id="btn-exams"     onclick="switchTab('exams')">Exams</button>
-    <button class="tab-btn" title="Settings" onclick="toggleSettings()">⚙</button>
+  <nav class="sidebar-nav">
+    <button class="sidebar-btn active" id="btn-today"     onclick="switchTab('today')">Today</button>
+    <button class="sidebar-btn"        id="btn-calendar"  onclick="switchTab('calendar')">Calendar</button>
+    <button class="sidebar-btn"        id="btn-deadlines" onclick="switchTab('deadlines')">Deadlines</button>
+    <button class="sidebar-btn"        id="btn-projects"  onclick="switchTab('projects')">Projects</button>
+    <button class="sidebar-btn"        id="btn-tasks"     onclick="switchTab('tasks')">Tasks</button>
+    <button class="sidebar-btn"        id="btn-exams"     onclick="switchTab('exams')">Exams</button>
   </nav>
-</header>
-
-<!-- Settings panel -->
-<div id="settings-panel" style="display:none;background:var(--card);border-bottom:1px solid var(--border);padding:16px 20px">
-  <div style="font-size:11px;font-weight:600;letter-spacing:0.6px;text-transform:uppercase;color:var(--muted);margin-bottom:12px">Settings</div>
-  <div style="display:flex;gap:8px;margin-bottom:10px">
-    <input type="text" id="api-key-inline" placeholder="API key  sk-ant-..." autocomplete="off" style="flex:1;font-size:14px">
-    <button class="btn-primary" style="min-width:60px;font-size:13px;padding:8px 14px" onclick="saveApiKeyInline()">Save</button>
+  <div class="sidebar-footer">
+    <button id="install-btn" class="sidebar-btn" style="display:none" onclick="installApp()">Install app</button>
+    <button class="sidebar-btn" onclick="toggleSettings()">Settings</button>
+    <button class="sidebar-theme" id="theme-toggle" onclick="toggleTheme()" title="Toggle dark mode">◐</button>
   </div>
-  <div style="display:flex;gap:8px">
-    <button class="btn-ghost" style="flex:1;font-size:13px" onclick="exportData()">Export data</button>
-    <button class="btn-ghost" style="flex:1;font-size:13px" onclick="importData()">Import data</button>
-  </div>
-  <input type="file" id="import-file" accept=".json" style="display:none" onchange="handleImportFile(this)">
-</div>
+</aside>
 
+<div class="content-area">
 <main>
 
   <!-- ══ TODAY ══ -->
@@ -864,6 +874,24 @@ html[data-theme="dark"] .sticky-note input[type="text"] { color: #ECD9A8; }
   </div>
 
 </main>
+</div><!-- .content-area -->
+</div><!-- .app-layout -->
+
+<!-- Settings overlay -->
+<div id="settings-panel" style="display:none" class="settings-overlay" onclick="toggleSettings()">
+  <div class="settings-modal" onclick="event.stopPropagation()">
+    <div class="settings-modal-title">Settings</div>
+    <div style="display:flex;gap:8px;margin-bottom:12px">
+      <input type="text" id="api-key-inline" placeholder="API key  sk-ant-..." autocomplete="off" style="flex:1;font-size:14px">
+      <button class="btn-primary" style="min-width:60px;font-size:13px;padding:8px 14px" onclick="saveApiKeyInline()">Save</button>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn-ghost" style="flex:1;font-size:13px" onclick="exportData()">Export data</button>
+      <button class="btn-ghost" style="flex:1;font-size:13px" onclick="importData()">Import data</button>
+    </div>
+    <input type="file" id="import-file" accept=".json" style="display:none" onchange="handleImportFile(this)">
+  </div>
+</div>
 
 <!-- Schedule edit modal -->
 <div id="edit-modal" style="display:none" role="dialog" aria-modal="true">
@@ -1226,7 +1254,7 @@ function switchTab(tab) {
 function toggleSettings() {
   const panel = document.getElementById('settings-panel');
   const open = panel.style.display === 'none';
-  panel.style.display = open ? '' : 'none';
+  panel.style.display = open ? 'flex' : 'none';
   if (open && S.apiKey) {
     document.getElementById('api-key-inline').value = S.apiKey.slice(0, 14) + '…';
   }
