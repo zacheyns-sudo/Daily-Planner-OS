@@ -731,7 +731,6 @@ html[data-theme="dark"] .sticky-note input[type="text"] { color: #ECD9A8; }
   <nav class="sidebar-nav">
     <button class="sidebar-btn active" id="btn-today"     onclick="switchTab('today')">Today</button>
     <button class="sidebar-btn"        id="btn-calendar"  onclick="switchTab('calendar')">Calendar</button>
-    <button class="sidebar-btn"        id="btn-deadlines" onclick="switchTab('deadlines')">Deadlines</button>
     <button class="sidebar-btn"        id="btn-projects"  onclick="switchTab('projects')">Assignments</button>
     <button class="sidebar-btn"        id="btn-tasks"     onclick="switchTab('tasks')">Tasks</button>
     <button class="sidebar-btn"        id="btn-exams"     onclick="switchTab('exams')">Exams</button>
@@ -822,18 +821,6 @@ html[data-theme="dark"] .sticky-note input[type="text"] { color: #ECD9A8; }
   </div>
 
   <!-- ══ DEADLINES ══ -->
-  <div id="tab-deadlines" style="display:none">
-    <div class="tab-page-title">Deadlines</div>
-    <div class="card">
-      <div class="section-head">Exams</div>
-      <div id="dl-exams"></div>
-    </div>
-    <div class="card">
-      <div class="section-head">Assignments</div>
-      <div id="dl-projects"></div>
-    </div>
-  </div>
-
   <!-- ══ ASSIGNMENTS ══ -->
   <div id="tab-projects" style="display:none">
     <div class="tab-page-title">Assignments</div>
@@ -1263,7 +1250,7 @@ function fmtLong()      { const n=new Date(); return `${DAYS[n.getDay()]}, ${n.g
 function fmtDateFull(ds){ const d=new Date(ds+'T00:00:00'); return `${DAYS[d.getDay()]}, ${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`; }
 
 // ─── Tab switching ────────────────────────────────────────────────────────────
-const ALL_TABS = ['today','calendar','deadlines','projects','tasks','exams'];
+const ALL_TABS = ['today','calendar','projects','tasks','exams'];
 function switchTab(tab) {
   ALL_TABS.forEach(t => {
     document.getElementById('tab-'+t).style.display = t===tab ? '' : 'none';
@@ -1271,7 +1258,6 @@ function switchTab(tab) {
   });
   document.getElementById('sticky-note').style.display = tab === 'today' ? '' : 'none';
   if (tab==='calendar')  renderCalendar();
-  if (tab==='deadlines') renderDeadlinesTab();
   if (tab==='projects')  renderProjects();
   if (tab==='tasks')     renderTaskList();
   if (tab==='today')     { renderUpcomingDeadlines(); renderTodayTasks(); renderUpcomingEventsList(); renderEveningRecap(); }
@@ -1819,58 +1805,6 @@ function renderUpcomingDeadlines() {
 }
 
 // ─── Deadlines tab ────────────────────────────────────────────────────────────
-function renderDeadlinesTab() {
-  const exEl = document.getElementById('dl-exams');
-  const examList = EXAMS.map(e => ({ ...e, days: daysBetween(e.date) })).sort((a,b) => a.days - b.days);
-  exEl.innerHTML = examList.map(e => {
-    const cls = e.days <= 0 ? 'b-exam' : e.days <= 7 ? 'b-exam' : e.days <= 14 ? 'b-amber' : 'b-grey';
-    const lbl = e.days < 0 ? 'Past' : e.days === 0 ? 'Today' : e.days === 1 ? 'Tomorrow' : `${e.days}d`;
-    return `
-      <div class="dl-item">
-        <div>
-          <div class="dl-name" style="font-weight:600">${esc(e.title)}</div>
-          <div class="dl-sub">${fmtShort(e.date)} · ${esc(e.course)}</div>
-        </div>
-        <span class="dl-days badge ${cls}">${lbl}</span>
-      </div>`;
-  }).join('');
-
-  const projEl = document.getElementById('dl-projects');
-  const TYPE_LABEL_ALL = {essay:'Essay','problem-set':'Problem set',reading:'Reading',review:'Review',presentation:'Presentation',report:'Report',project:'Project',other:'Other'};
-
-  const taskItems = S.tasks.map(t => ({
-    title: t.title, course: t.course || '', type: t.type || 'other',
-    dueDate: t.deadline, done: !!(t.done || S.completedTasks.includes(t.id)),
-    days: daysBetween(t.deadline),
-  }));
-  const asgnItems = S.assignments.filter(a => a.dueDate).map(a => ({
-    title: a.title, course: a.course || '', type: a.type || 'other',
-    dueDate: a.dueDate, done: a.done,
-    days: daysBetween(a.dueDate),
-  }));
-  const all = [...taskItems, ...asgnItems].sort((a, b) => {
-    if (!!a.done !== !!b.done) return a.done ? 1 : -1;
-    return a.days - b.days;
-  });
-
-  if (!all.length) {
-    projEl.innerHTML = `<div class="empty">No assignments yet.</div>`;
-  } else {
-    projEl.innerHTML = all.map(a => {
-      const cls = a.done ? 'b-grey' : a.days<0 ? 'b-red' : a.days<=3 ? 'b-red' : a.days<=7 ? 'b-amber' : 'b-green';
-      const lbl = a.done ? 'Done' : a.days<0 ? 'Overdue' : a.days===0 ? 'Today' : a.days===1 ? 'Tomorrow' : `${a.days}d`;
-      return `
-        <div class="dl-item">
-          <div>
-            <div class="dl-name" style="${a.done?'text-decoration:line-through;color:var(--muted)':''}">${esc(a.title)}</div>
-            <div class="dl-sub">${TYPE_LABEL_ALL[a.type]||a.type}${a.course?' · '+esc(a.course):''} · Due ${fmtShort(a.dueDate)}</div>
-          </div>
-          <span class="dl-days badge ${cls}">${lbl}</span>
-        </div>`;
-    }).join('');
-  }
-}
-
 // ─── Calendar ─────────────────────────────────────────────────────────────────
 function calNav(dir) {
   calMonth += dir;
