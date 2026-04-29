@@ -97,8 +97,8 @@ header {
   margin-bottom: 10px;
   gap: 10px;
 }
-header h1 { font-size: 16px; font-weight: 600; letter-spacing: -0.2px; }
-.sub { font-size: 12px; color: var(--muted); margin-top: 1px; }
+header h1 { font-size: 15px; font-weight: 700; letter-spacing: -0.3px; color: var(--accent); }
+.sub { font-size: 12px; font-weight: 500; color: var(--muted); margin-top: 2px; letter-spacing: 0.1px; }
 .header-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 
 .theme-toggle {
@@ -137,16 +137,23 @@ header h1 { font-size: 16px; font-weight: 600; letter-spacing: -0.2px; }
 .tab-icon { font-size: 15px; padding: 10px 14px; }
 
 /* ── Layout ── */
-main { max-width: 640px; margin: 0 auto; padding: 20px 16px 60px; }
+main { max-width: 640px; margin: 0 auto; padding: 24px 16px 60px; }
+
+/* ── Page titles ── */
+.tab-page-title {
+  font-size: 24px; font-weight: 800; letter-spacing: -0.5px;
+  color: var(--text); margin-bottom: 20px;
+}
 
 /* ── Cards ── */
 .card {
   background: var(--card);
   border-radius: var(--radius);
-  box-shadow: var(--shadow);
-  padding: 20px;
-  margin-bottom: 14px;
-  transition: background 0.25s;
+  border: 1px solid var(--border);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+  padding: 24px;
+  margin-bottom: 16px;
+  transition: background 0.25s, border-color 0.25s;
 }
 
 /* ── Forms ── */
@@ -174,9 +181,13 @@ button { font-family: inherit; cursor: pointer; border: none; transition: all 0.
 
 /* ── Section head ── */
 .section-head {
-  font-size: 11px; font-weight: 600; letter-spacing: 0.7px;
-  text-transform: uppercase; color: var(--muted); margin-bottom: 12px;
+  font-size: 16px; font-weight: 700; letter-spacing: -0.2px;
+  color: var(--text); margin-bottom: 16px;
   display: flex; align-items: center; justify-content: space-between; gap: 8px;
+}
+.section-head .section-action {
+  font-size: 12px; font-weight: 400; color: var(--muted);
+  letter-spacing: 0; text-transform: none;
 }
 
 /* ── Badges ── */
@@ -195,10 +206,10 @@ button { font-family: inherit; cursor: pointer; border: none; transition: all 0.
 .focus-card {
   background: var(--card);
   border-radius: var(--radius);
-  box-shadow: var(--shadow-lg);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
   padding: 24px;
-  margin-bottom: 14px;
-  border: 1px solid var(--accent-bg);
+  margin-bottom: 16px;
+  border: 1px solid var(--border);
   position: relative;
   overflow: hidden;
 }
@@ -578,6 +589,78 @@ html[data-theme="dark"] .sticky-note input[type="text"] { color: #ECD9A8; }
   font-size: 14px; line-height: 1.6; color: var(--text);
   white-space: pre-wrap;
 }
+
+/* ── Exam plan tab ── */
+.ep-callout {
+  background: var(--accent-bg); border-left: 3px solid var(--accent);
+  border-radius: 0 8px 8px 0; padding: 12px 16px; margin-bottom: 24px;
+  font-size: 14px; line-height: 1.6; color: var(--text);
+}
+.ep-callout strong { color: var(--accent); }
+.ep-day-section { margin-bottom: 28px; }
+.ep-day-section.ep-past { opacity: 0.55; }
+.ep-day-heading {
+  font-size: 17px; font-weight: 700; letter-spacing: -0.2px;
+  margin-bottom: 8px; display: flex; align-items: center; gap: 10px;
+}
+.ep-day-heading .ep-today-tag {
+  font-size: 11px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase;
+  color: white; background: var(--accent); border-radius: 5px; padding: 2px 7px;
+}
+.ep-day-heading .ep-exam-tag {
+  font-size: 11px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase;
+  color: white; background: var(--exam); border-radius: 5px; padding: 2px 7px;
+}
+.ep-divider { border: none; border-top: 1px solid var(--border); margin-bottom: 10px; }
+.ep-classes-line { font-size: 12px; color: var(--muted); margin-bottom: 8px; }
+.ep-table {
+  width: 100%; border-collapse: collapse; font-size: 13px;
+  border: 1px solid var(--border); border-radius: 8px; overflow: hidden;
+}
+.ep-table th {
+  text-align: left; padding: 8px 12px;
+  background: var(--bg); color: var(--muted);
+  font-size: 11px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase;
+  border-bottom: 1px solid var(--border);
+}
+.ep-table th:last-child { width: 28px; }
+.ep-table td {
+  padding: 8px 12px; border-bottom: 1px solid var(--border); vertical-align: middle;
+}
+.ep-table tr:last-child td { border-bottom: none; }
+.ep-table tbody tr:hover:not(.ep-add-row) { background: var(--bg); }
+.ep-table tr.ep-task-done td:not(:last-child) { color: var(--muted); }
+.ep-table tr.ep-task-done .ep-task-text { text-decoration: line-through; }
+.ep-td-check { width: 28px; }
+.ep-td-course { width: 110px; }
+.ep-td-time { width: 60px; color: var(--muted); }
+.ep-check {
+  width: 16px; height: 16px; border-radius: 50%;
+  border: 2px solid var(--border); flex-shrink: 0;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: all 0.12s; background: var(--card); margin: 0 auto;
+}
+.ep-check:hover { border-color: var(--accent); }
+.ep-check.checked { background: var(--accent); border-color: var(--accent); }
+.ep-check.checked::after { content: '✓'; font-size: 9px; font-weight: 700; color: white; }
+.ep-course-pill {
+  display: inline-block; font-size: 11px; font-weight: 600;
+  padding: 2px 8px; border-radius: 20px;
+  background: var(--accent-bg); color: var(--accent);
+}
+.ep-add-row td { background: var(--bg); padding: 6px 8px; }
+.ep-add-row input {
+  width: 100%; padding: 5px 6px; border: none; background: transparent;
+  font-size: 13px; font-family: inherit; color: var(--text); outline: none;
+}
+.ep-add-row input::placeholder { color: var(--muted); }
+.ep-add-row input:focus { background: var(--card); border-radius: 4px; }
+.ep-add-row-btn {
+  width: 22px; height: 22px; border-radius: 50%; border: 1px solid var(--border);
+  background: var(--card); color: var(--muted); font-size: 15px; line-height: 1;
+  display: flex; align-items: center; justify-content: center; cursor: pointer; margin: 0 auto;
+}
+.ep-add-row-btn:hover { border-color: var(--accent); color: var(--accent); }
 </style>
 </head>
 <body>
@@ -599,6 +682,7 @@ html[data-theme="dark"] .sticky-note input[type="text"] { color: #ECD9A8; }
     <button class="tab-btn"        id="btn-deadlines" onclick="switchTab('deadlines')">Deadlines</button>
     <button class="tab-btn"        id="btn-projects"  onclick="switchTab('projects')">Projects</button>
     <button class="tab-btn"        id="btn-tasks"     onclick="switchTab('tasks')">Tasks</button>
+    <button class="tab-btn"        id="btn-exams"     onclick="switchTab('exams')">Exams</button>
     <button class="tab-btn" title="Settings" onclick="toggleSettings()">⚙</button>
   </nav>
 </header>
@@ -621,6 +705,7 @@ html[data-theme="dark"] .sticky-note input[type="text"] { color: #ECD9A8; }
 
   <!-- ══ TODAY ══ -->
   <div id="tab-today">
+    <div class="tab-page-title" id="today-page-title"></div>
     <div id="setup-card" class="card" style="display:none">
       <div class="label-row">API key needed</div>
       <p class="setup-note">Enter your Anthropic API key once. Stored only in your browser — never shared.</p>
@@ -643,7 +728,7 @@ html[data-theme="dark"] .sticky-note input[type="text"] { color: #ECD9A8; }
     <div class="card">
       <div class="section-head">
         <span>Upcoming events</span>
-        <span style="font-size:11px;font-weight:400;color:var(--muted);text-transform:none;letter-spacing:0">Add from Calendar →</span>
+        <span class="section-action">Add from Calendar →</span>
       </div>
       <div id="upcoming-events-list"></div>
     </div>
@@ -659,6 +744,7 @@ html[data-theme="dark"] .sticky-note input[type="text"] { color: #ECD9A8; }
 
   <!-- ══ CALENDAR ══ -->
   <div id="tab-calendar" style="display:none">
+    <div class="tab-page-title">Calendar</div>
     <div class="card">
       <div class="cal-nav">
         <button class="cal-nav-btn" onclick="calNav(-1)">‹</button>
@@ -694,30 +780,33 @@ html[data-theme="dark"] .sticky-note input[type="text"] { color: #ECD9A8; }
 
   <!-- ══ DEADLINES ══ -->
   <div id="tab-deadlines" style="display:none">
+    <div class="tab-page-title">Deadlines</div>
     <div class="card">
-      <div class="section-head" style="margin-bottom:4px">Exams</div>
+      <div class="section-head">Exams</div>
       <div id="dl-exams"></div>
     </div>
     <div class="card">
-      <div class="section-head" style="margin-bottom:4px">Academic</div>
+      <div class="section-head">Academic</div>
       <div id="dl-academic"></div>
     </div>
     <div class="card">
-      <div class="section-head" style="margin-bottom:4px">Project milestones</div>
+      <div class="section-head">Project milestones</div>
       <div id="dl-projects"></div>
     </div>
   </div>
 
   <!-- ══ PROJECTS ══ -->
   <div id="tab-projects" style="display:none">
+    <div class="tab-page-title">Projects</div>
     <div id="project-switcher" class="project-switcher"></div>
     <div id="projects-body"></div>
   </div>
 
   <!-- ══ TASKS (ACADEMIC) ══ -->
   <div id="tab-tasks" style="display:none">
+    <div class="tab-page-title">Tasks</div>
     <div class="card">
-      <div class="section-head" style="margin-bottom:12px">
+      <div class="section-head">
         <span>✨ Extract deadlines from text</span>
       </div>
       <p style="font-size:13px;color:var(--muted);margin-bottom:12px;line-height:1.5">Paste a syllabus, course brief, email, or anything with dates. Claude will pull out the tasks for you to review.</p>
@@ -726,7 +815,7 @@ html[data-theme="dark"] .sticky-note input[type="text"] { color: #ECD9A8; }
       <div id="extract-result"></div>
     </div>
     <div class="card">
-      <div class="section-head" style="margin-bottom:14px">Add academic task</div>
+      <div class="section-head">Add academic task</div>
       <div class="form-group">
         <label>Task name</label>
         <input type="text" id="t-title" placeholder="e.g. IR essay — write introduction">
@@ -760,8 +849,17 @@ html[data-theme="dark"] .sticky-note input[type="text"] { color: #ECD9A8; }
       <button class="btn-primary" onclick="addTask()" style="width:100%;margin-top:4px">Add task</button>
     </div>
     <div class="card">
-      <div class="section-head" style="margin-bottom:14px">All academic tasks</div>
+      <div class="section-head">All academic tasks</div>
       <div id="task-list"></div>
+    </div>
+  </div>
+
+  <!-- ══ EXAMS ══ -->
+  <div id="tab-exams" style="display:none">
+    <div class="tab-page-title">Exam Study Plan</div>
+    <div class="card">
+      <div id="ep-callout-block"></div>
+      <div id="exam-plan-body"></div>
     </div>
   </div>
 
@@ -1034,6 +1132,7 @@ const S = {
   dismissedRecap: localStorage.getItem('org_dismissed_recap')            || '',
   activeProject:  localStorage.getItem('org_active_project')             || 'filthy-labs',
   theme:          localStorage.getItem('org_theme')                      || 'light',
+  examPlan:       JSON.parse(localStorage.getItem('org_exam_plan')       || '{}'),
 };
 
 function persist() {
@@ -1051,6 +1150,7 @@ function persist() {
   localStorage.setItem('org_dismissed_recap',  S.dismissedRecap);
   localStorage.setItem('org_active_project',   S.activeProject);
   localStorage.setItem('org_theme',            S.theme);
+  localStorage.setItem('org_exam_plan', JSON.stringify(S.examPlan));
   if (S.apiKey) localStorage.setItem('org_key', S.apiKey);
 }
 
@@ -1107,7 +1207,7 @@ function fmtLong()      { const n=new Date(); return `${DAYS[n.getDay()]}, ${n.g
 function fmtDateFull(ds){ const d=new Date(ds+'T00:00:00'); return `${DAYS[d.getDay()]}, ${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`; }
 
 // ─── Tab switching ────────────────────────────────────────────────────────────
-const ALL_TABS = ['today','calendar','deadlines','projects','tasks'];
+const ALL_TABS = ['today','calendar','deadlines','projects','tasks','exams'];
 function switchTab(tab) {
   ALL_TABS.forEach(t => {
     document.getElementById('tab-'+t).style.display = t===tab ? '' : 'none';
@@ -1119,6 +1219,7 @@ function switchTab(tab) {
   if (tab==='projects')  renderProjects();
   if (tab==='tasks')     renderTaskList();
   if (tab==='today')     { renderUpcomingDeadlines(); renderTodayTasks(); renderUpcomingEventsList(); renderEveningRecap(); }
+  if (tab==='exams')     renderExamTab();
 }
 
 // ─── Settings panel ───────────────────────────────────────────────────────────
@@ -1150,6 +1251,7 @@ function exportData() {
     completedLog:   S.completedLog,
     completedTasks: S.completedTasks,
     recaps:         S.recaps,
+    examPlan:       S.examPlan,
     exportedAt: new Date().toISOString(),
   };
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -1178,6 +1280,7 @@ function handleImportFile(input) {
       if (data.completedLog)   S.completedLog   = data.completedLog;
       if (data.completedTasks) S.completedTasks = data.completedTasks;
       if (data.recaps)         S.recaps         = data.recaps;
+      if (data.examPlan)       S.examPlan       = data.examPlan;
       S.focus = null; S.focusDate = '';
       persist();
       renderUpcomingDeadlines();
@@ -1223,13 +1326,13 @@ function getRecurringPS() {
   const active = [];
 
   const eocActive = (dow === 0 && hour >= 18) || (dow === 1) || (dow === 2) || (dow === 3 && hour < 12.25);
-  if (eocActive) active.push({ id: `ps-ecb307-${todayStr()}`, name: 'Economics of Conflict weekly problem set', due: 'Wednesday at 12:15 (start of EoC PBL)' });
+  if (eocActive) active.push({ id: `ps-ecb307-${todayStr()}`, name: 'Economics of Conflict weekly problem set', due: 'Wednesday at 12:15 (start of EoC PBL)', type: 'problem-set' });
 
   const econActive = (dow === 1 && hour >= 15.25) || (dow === 2) || (dow === 3) || (dow === 4 && hour < 9);
-  if (econActive) active.push({ id: `ps-ecb207-${todayStr()}`, name: 'Econometrics weekly problem set', due: 'Thursday at 9:00 (start of Econometrics PBL)' });
+  if (econActive) active.push({ id: `ps-ecb207-${todayStr()}`, name: 'Econometrics weekly problem set', due: 'Thursday at 9:00 (start of Econometrics PBL)', type: 'problem-set' });
 
   const irActive = (dow === 2 && hour >= 15.25) || (dow === 3) || (dow === 4 && hour < 12.25);
-  if (irActive) active.push({ id: `ps-ir-${todayStr()}`, name: 'International Relations weekly reading', due: 'Thursday at 12:15 (start of IR PBL)' });
+  if (irActive) active.push({ id: `ps-ir-${todayStr()}`, name: 'International Relations weekly reading', due: 'Thursday at 12:15 (start of IR PBL)', type: 'reading' });
 
   return active;
 }
@@ -1277,7 +1380,9 @@ function essayChunk(days) {
 function buildPrompt() {
   const dow         = new Date().getDay();
   const sched       = WEEKLY[dow];
-  const recurringPS = getRecurringPS().filter(p => !S.completedTasks.includes(p.id));
+  const allRecurring   = getRecurringPS().filter(p => !S.completedTasks.includes(p.id));
+  const recurringPS    = allRecurring.filter(p => p.type === 'problem-set');
+  const recurringReads = allRecurring.filter(p => p.type === 'reading');
 
   const allUpcomingEvents = S.events
     .map(ev => ({ ...ev, days: daysBetween(ev.date) }))
@@ -1306,7 +1411,7 @@ function buildPrompt() {
 
   const tier1 = allAcademic.filter(t => t.days <= 2);
   const tier2 = allAcademic.filter(t => t.type === 'problem-set' && t.days > 2 && t.days <= 3);
-  const tier3 = getRecentLectures();
+  const tier3 = [...recurringReads, ...getRecentLectures()];
   const tier4 = allAcademic
     .filter(t => ['essay', 'presentation'].includes(t.type) && t.days > 2)
     .map(t => { const ch = essayChunk(t.days); return ch ? { ...t, chunk: ch } : null; })
@@ -1395,7 +1500,7 @@ ${examActive && !examCritical
 TIER 2 — Problem sets due within 3 days:
 ${tier2.length ? tier2.map(fmtTask).join('\n') : '  (none)'}
 
-TIER 3 — Lecture review (24–48 h window, only if not yet reviewed):
+TIER 3 — Weekly readings due this week + lecture review (24–48 h window):
 ${tier3.length ? tier3.map(fmtLect).join('\n') : '  (none)'}
 
 TIER 4 — Essays/presentations in their active window (use the exact chunk shown):
@@ -1584,7 +1689,7 @@ function renderCompletionLog() {
   el.innerHTML = [...S.completedLog].reverse().slice(0, 10).map(e => `
     <div class="log-item">
       <div class="log-date">${fmtShort(e.completedDate)}</div>
-      <div class="log-entry">${esc(e.task)}${e.course ? ` <span style="color:var(--muted);font-size:12px">(${esc(e.course)})</span>` : ''}</div>
+      <div class="log-entry" style="${e.cancelled ? 'color:var(--muted)' : ''}">${e.cancelled ? `<span style="font-size:10px;font-weight:600;letter-spacing:0.5px;text-transform:uppercase;color:var(--muted);margin-right:6px">cancelled</span>` : ''}${esc(e.task)}${e.course ? ` <span style="color:var(--muted);font-size:12px">(${esc(e.course)})</span>` : ''}</div>
     </div>`).join('');
 }
 
@@ -2310,7 +2415,7 @@ function renderProjects() {
     </div>
 
     <div class="card">
-      <div class="section-head" style="margin-bottom:14px">Add task or milestone</div>
+      <div class="section-head">Add task or milestone</div>
       <div class="form-group">
         <label>Title</label>
         <input type="text" id="proj-title" placeholder="e.g. Research 5 more products">
@@ -2332,7 +2437,7 @@ function renderProjects() {
     </div>
 
     <div class="card">
-      <div class="section-head" style="margin-bottom:4px">Quick log</div>
+      <div class="section-head">Quick log</div>
       <p style="font-size:13px;color:var(--muted);margin-bottom:12px">Jot down what you just did, learned, or noticed.</p>
       <div style="display:flex;gap:8px">
         <input type="text" id="proj-log-input" placeholder="e.g. Added 3 products, noticed a gap in Sennheiser" style="flex:1" onkeydown="if(event.key==='Enter')addProjectLog('${proj.id}')">
@@ -2341,12 +2446,12 @@ function renderProjects() {
     </div>
 
     <div class="card">
-      <div class="section-head" style="margin-bottom:12px">Tasks &amp; milestones</div>
+      <div class="section-head">Tasks &amp; milestones</div>
       ${taskList}
     </div>
 
     <div class="card">
-      <div class="section-head" style="margin-bottom:12px">Activity log</div>
+      <div class="section-head">Activity log</div>
       ${logList}
     </div>
   `;
@@ -2372,10 +2477,24 @@ function toggleProjectTask(projId, taskId) {
 function removeProjectTask(projId, taskId) {
   const proj = S.projects.find(p => p.id === projId);
   if (!proj) return;
+  const t = proj.tasks.find(t => t.id === taskId);
+  if (t) {
+    S.completedLog.push({
+      id: 'cancelled-' + Date.now(),
+      task: t.title,
+      course: proj.name,
+      category: 'project',
+      type: t.isMilestone ? 'milestone' : 'task',
+      urgency: '',
+      completedDate: todayStr(),
+      cancelled: true,
+    });
+  }
   proj.tasks = proj.tasks.filter(t => t.id !== taskId);
   S.focus = null; S.focusDate = '';
   persist();
   renderProjects();
+  renderCompletionLog();
 }
 
 function addProjectTask(projId) {
@@ -2547,9 +2666,22 @@ function addTask() {
 }
 
 function removeTask(id) {
-  S.tasks = S.tasks.filter(t => t.id!==id);
+  const t = S.tasks.find(t => t.id === id);
+  if (t) {
+    S.completedLog.push({
+      id: 'cancelled-' + Date.now(),
+      task: t.title,
+      course: t.course || '',
+      category: 'academic',
+      type: t.type || 'other',
+      urgency: '',
+      completedDate: todayStr(),
+      cancelled: true,
+    });
+  }
+  S.tasks = S.tasks.filter(t => t.id !== id);
   S.focus = null; S.focusDate = '';
-  persist(); renderTaskList(); renderUpcomingDeadlines();
+  persist(); renderTaskList(); renderUpcomingDeadlines(); renderCompletionLog();
 }
 
 function renderTaskList() {
@@ -2744,7 +2876,7 @@ async function submitRecap() {
 
   const today = todayStr();
   const recentRecaps = S.recaps.slice(-5).map(r => `${fmtShort(r.date)}: ${r.entry}`).join('\n');
-  const recentCompleted = S.completedLog.slice(-10).map(c => `${fmtShort(c.completedDate)}: ${c.task}`).join('\n');
+  const recentCompleted = S.completedLog.slice(-10).map(c => `${fmtShort(c.completedDate)}: ${c.cancelled ? '[CANCELLED] ' : ''}${c.task}${c.course ? ` (${c.course})` : ''}`).join('\n');
   const tomorrowDow = (new Date().getDay() + 1) % 7;
   const tomorrowSched = WEEKLY[tomorrowDow];
   const tomorrowStr = tomorrowSched.slots.length ? tomorrowSched.slots.map(s => `${s.t} ${s.n}`).join(', ') : 'nothing scheduled';
@@ -2936,13 +3068,13 @@ function renderTodayTasks() {
   const today = todayStr();
   const items = [];
 
-  getRecurringPS().forEach(p => {
-    items.push({ id: p.id, label: p.name, sub: `Due ${p.due}`, done: S.completedTasks.includes(p.id) });
-  });
-
-  getRecentLectures().forEach(l => {
-    items.push({ id: l.id, label: l.name, sub: 'Review recommended', done: S.completedTasks.includes(l.id) });
-  });
+  const ps = getRecurringPS();
+  const pendingPS   = ps.filter(p => !S.completedTasks.includes(p.id) && p.type === 'problem-set');
+  const pendingRead = ps.filter(p => !S.completedTasks.includes(p.id) && p.type === 'reading');
+  const nextPS = pendingPS[0] || pendingRead[0] || ps[0];
+  if (nextPS) {
+    items.push({ id: nextPS.id, label: nextPS.name, sub: `Due ${nextPS.due}`, done: S.completedTasks.includes(nextPS.id) });
+  }
 
   S.tasks
     .filter(t => !t.done)
@@ -3007,9 +3139,132 @@ function toggleTodayTask(id) {
   renderUpcomingDeadlines();
 }
 
+// ─── Exam plan tab ────────────────────────────────────────────────────────────
+function renderExamTab() {
+  const el    = document.getElementById('exam-plan-body');
+  const cdEl  = document.getElementById('ep-countdown');
+  const today = todayStr();
+
+  const lastExam = EXAMS.reduce((latest, e) => e.date > latest ? e.date : latest, '');
+  if (!lastExam) { el.innerHTML = '<div class="empty">No exams configured in EXAMS.</div>'; return; }
+
+  // Callout block listing all exams + days remaining
+  const calloutEl = document.getElementById('ep-callout-block');
+  const upcoming = EXAMS.map(e => ({ ...e, days: daysBetween(e.date) })).filter(e => e.days >= 0).sort((a,b) => a.days-b.days);
+  calloutEl.innerHTML = upcoming.length
+    ? `<div class="ep-callout">${upcoming.map(e => `<strong>${esc(e.title)}</strong> — ${e.days === 0 ? 'today' : `in ${e.days} day${e.days===1?'':'s'}`}`).join(' &nbsp;·&nbsp; ')}</div>`
+    : '';
+
+  const startDate = new Date(today + 'T00:00:00');
+  const endDate   = new Date(lastExam + 'T00:00:00');
+
+  const days = [];
+  for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+    days.push(d.toISOString().split('T')[0]);
+  }
+
+  el.innerHTML = days.map((ds, i) => {
+    const date      = new Date(ds + 'T00:00:00');
+    const dow       = date.getDay();
+    const isToday   = ds === today;
+    const isPast    = ds < today;
+    const isWeekend = dow === 0 || dow === 6;
+    const exam      = EXAMS.find(e => e.date === ds);
+    const tasks     = S.examPlan[ds] || [];
+    const classes   = S.events.filter(ev => ev.date === ds && ev.category === 'class' && !examForClassEvent(ev));
+
+    const dayNum  = i + 1;
+    const dayName = `${DAYS[dow]}, ${date.getDate()} ${MONTHS[date.getMonth()]}`;
+    const todayTag = isToday ? `<span class="ep-today-tag">Today</span>` : '';
+    const examTag  = exam    ? `<span class="ep-exam-tag">Exam</span>` : '';
+
+    const taskRows = tasks.map(t => `
+      <tr class="${t.done ? 'ep-task-done' : ''}">
+        <td class="ep-td-check"><div class="ep-check ${t.done ? 'checked' : ''}" onclick="toggleExamTask('${ds}','${t.id}')"></div></td>
+        <td class="ep-td-course">${t.course ? `<span class="ep-course-pill">${esc(t.course)}</span>` : ''}</td>
+        <td><span class="ep-task-text">${esc(t.title)}</span></td>
+        <td class="ep-td-time">${esc(t.duration || '')}</td>
+        <td><button class="btn-remove" onclick="removeExamTask('${ds}','${t.id}')">✕</button></td>
+      </tr>`).join('');
+
+    const classesLine = classes.length
+      ? `<div class="ep-classes-line">Classes: ${classes.map(c => esc(c.title)).join(' · ')}</div>`
+      : '';
+
+    return `
+      <div class="ep-day-section ${isPast && !isToday ? 'ep-past' : ''}" id="ep-day-${ds}">
+        <div class="ep-day-heading">
+          Day ${dayNum} — ${dayName} ${todayTag}${examTag}
+        </div>
+        <hr class="ep-divider">
+        ${classesLine}
+        <table class="ep-table">
+          <thead>
+            <tr>
+              <th class="ep-td-check"></th>
+              <th class="ep-td-course">Course</th>
+              <th>Task</th>
+              <th class="ep-td-time">Time</th>
+              <th style="width:28px"></th>
+            </tr>
+          </thead>
+          <tbody>
+            ${taskRows}
+            <tr class="ep-add-row">
+              <td class="ep-td-check"><button class="ep-add-row-btn" onclick="addExamTask('${ds}')">+</button></td>
+              <td><input id="ep-course-${ds}" placeholder="Course…"></td>
+              <td><input id="ep-input-${ds}" placeholder="Add study task…" onkeydown="if(event.key==='Enter')addExamTask('${ds}')"></td>
+              <td><input id="ep-time-${ds}" placeholder="e.g. 2h"></td>
+              <td></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>`;
+  }).join('');
+
+  const todaySection = document.getElementById(`ep-day-${today}`);
+  if (todaySection) todaySection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function addExamTask(ds) {
+  const titleInput  = document.getElementById(`ep-input-${ds}`);
+  const courseInput = document.getElementById(`ep-course-${ds}`);
+  const timeInput   = document.getElementById(`ep-time-${ds}`);
+  if (!titleInput) return;
+  const title = titleInput.value.trim();
+  if (!title) { titleInput.focus(); return; }
+  if (!S.examPlan[ds]) S.examPlan[ds] = [];
+  S.examPlan[ds].push({
+    id: 'ep-' + Date.now(),
+    title,
+    course:   courseInput ? courseInput.value.trim() : '',
+    duration: timeInput   ? timeInput.value.trim()   : '',
+    done: false,
+  });
+  persist();
+  renderExamTab();
+}
+
+function toggleExamTask(ds, taskId) {
+  const tasks = S.examPlan[ds];
+  if (!tasks) return;
+  const t = tasks.find(t => t.id === taskId);
+  if (t) t.done = !t.done;
+  persist();
+  renderExamTab();
+}
+
+function removeExamTask(ds, taskId) {
+  if (!S.examPlan[ds]) return;
+  S.examPlan[ds] = S.examPlan[ds].filter(t => t.id !== taskId);
+  persist();
+  renderExamTab();
+}
+
 // ─── Boot ─────────────────────────────────────────────────────────────────────
 applyTheme();
 document.getElementById('date-display').textContent = fmtLong();
+document.getElementById('today-page-title').textContent = (() => { const n = new Date(); return DAYS[n.getDay()]; })();
 renderSchedule();
 renderTodayTasks();
 renderUpcomingDeadlines();
