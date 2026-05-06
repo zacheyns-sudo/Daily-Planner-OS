@@ -75,3 +75,4 @@ The gear icon (⚙) in the header opens a slide-down settings panel with API key
 - Use `esc(s)` (line ~2846) for any user-supplied string inserted into `innerHTML`.
 - IDs on interactive elements are stable and used directly (`document.getElementById`). Do not rename them without updating all call sites.
 - `EXAMS` is hardcoded — add/change exam dates there directly rather than through the UI.
+- When rendering the app with a new design prompted, make sure to keep the same functionality as the original app. Use the screenshots and compare these screenshots to the template provided. Then make the necessary adjustments to match the template. 

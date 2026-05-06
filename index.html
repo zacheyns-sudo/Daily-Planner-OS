@@ -122,6 +122,8 @@ body {
   cursor: pointer; transition: all 0.12s;
 }
 .sidebar-theme:hover { background: var(--bg); color: var(--text); }
+.nav-short { display: none; }
+.nav-full  { display: inline; }
 
 /* ── Content area ── */
 .content-area { margin-left: 210px; flex: 1; min-width: 0; }
@@ -148,16 +150,54 @@ body {
   .sidebar {
     width: 100%; height: auto;
     top: auto; bottom: 0;
-    flex-direction: row; align-items: center;
+    flex-direction: row; align-items: stretch;
     border-right: none; border-top: 1px solid var(--border);
-    padding: 6px 4px; overflow-x: auto; overflow-y: visible;
+    padding: 0;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    overflow: visible;
   }
   .sidebar-brand { display: none; }
-  .sidebar-nav { flex-direction: row; gap: 0; flex: 1; }
-  .sidebar-footer { flex-direction: row; border-top: none; padding-top: 0; margin-top: 0; border-left: 1px solid var(--border); padding-left: 4px; }
-  .sidebar-btn { padding: 8px 10px; font-size: 12px; white-space: nowrap; border-radius: 6px; }
-  .sidebar-theme { width: auto; padding: 8px 10px; font-size: 12px; white-space: nowrap; border-radius: 6px; }
-  .content-area { margin-left: 0; margin-bottom: 58px; }
+  .sidebar-nav {
+    flex-direction: row; gap: 0; flex: 1;
+  }
+  .sidebar-footer {
+    flex-direction: row; border-top: none; padding: 0; margin: 0;
+    border-left: 1px solid var(--border);
+  }
+  .sidebar-btn {
+    flex: 1; padding: 10px 4px 9px;
+    font-size: 11px; white-space: nowrap; overflow: hidden;
+    text-overflow: ellipsis; border-radius: 0;
+    justify-content: center; text-align: center;
+    min-width: 0;
+  }
+  .sidebar-footer .sidebar-btn { flex: none; padding: 10px 12px 9px; }
+  .sidebar-theme {
+    width: auto; padding: 10px 12px 9px;
+    font-size: 15px; border-radius: 0;
+  }
+  .content-area {
+    margin-left: 0;
+    margin-bottom: calc(52px + env(safe-area-inset-bottom, 0px));
+  }
+  /* Sticky note clears the bottom nav */
+  .sticky-note {
+    bottom: calc(52px + env(safe-area-inset-bottom, 0px) + 10px);
+    right: 14px;
+    width: 190px;
+  }
+  /* Shorten long nav labels */
+  .nav-full  { display: none; }
+  .nav-short { display: inline; }
+  /* Settings as a bottom sheet */
+  .settings-overlay { align-items: flex-end; }
+  .settings-modal {
+    width: 100%;
+    border-radius: 16px 16px 0 0;
+    padding: 20px 20px calc(20px + env(safe-area-inset-bottom, 0px));
+    max-height: 75dvh;
+    overflow-y: auto;
+  }
 }
 
 /* ── Layout ── */
@@ -303,8 +343,10 @@ button { font-family: inherit; cursor: pointer; border: none; transition: all 0.
 .dot-soon   { background: var(--amber); }
 .dot-ok     { background: var(--accent); }
 .dot-proj   { background: var(--purple); }
-.dot-exam   { background: var(--exam); }
-.dot-event  { background: var(--event); }
+.dot-exam      { background: var(--exam); }
+.dot-event     { background: var(--event); }
+.dot-study     { background: var(--amber); }
+.dot-milestone { background: var(--blue); }
 
 .cal-detail { margin-top: 16px; border-top: 1px solid var(--border); padding-top: 16px; animation: slideIn 0.2s ease; }
 .cal-detail-date { font-size: 15px; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
@@ -718,6 +760,34 @@ html[data-theme="dark"] .sticky-note input[type="text"] { color: #ECD9A8; }
   display: flex; align-items: center; justify-content: center; cursor: pointer; margin: 0 auto;
 }
 .ep-add-row-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+/* ── Plan tab ──────────────────────────────────────────────────────────────── */
+.plan-day-card { margin-bottom: 12px; }
+.plan-day-card.plan-day-past { opacity: 0.5; }
+.plan-day-card.plan-day-today { border: 2px solid var(--accent); }
+.plan-day-heading {
+  font-size: 15px; font-weight: 700; letter-spacing: -0.2px;
+  margin-bottom: 12px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+}
+.plan-task-row {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 10px 0; border-bottom: 1px solid var(--border); cursor: pointer;
+  transition: opacity 0.15s;
+}
+.plan-task-row:last-child { border-bottom: none; }
+.plan-task-row:hover { opacity: 0.8; }
+.plan-task-row.plan-task-done { opacity: 0.45; }
+.plan-task-check {
+  width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--border);
+  flex-shrink: 0; margin-top: 1px; display: flex; align-items: center; justify-content: center;
+  transition: all 0.12s; background: var(--card);
+}
+.plan-task-check.checked { background: var(--accent); border-color: var(--accent); }
+.plan-task-check.checked::after { content: '✓'; font-size: 10px; font-weight: 700; color: white; }
+.plan-task-body { flex: 1; min-width: 0; }
+.plan-task-title { font-size: 14px; font-weight: 500; color: var(--text); }
+.plan-task-done .plan-task-title { text-decoration: line-through; }
+.plan-task-meta { font-size: 12px; color: var(--muted); margin-top: 2px; }
 </style>
 </head>
 <body>
@@ -729,11 +799,11 @@ html[data-theme="dark"] .sticky-note input[type="text"] { color: #ECD9A8; }
     <div class="sub" id="date-display"></div>
   </div>
   <nav class="sidebar-nav">
-    <button class="sidebar-btn active" id="btn-today"     onclick="switchTab('today')">Today</button>
-    <button class="sidebar-btn"        id="btn-calendar"  onclick="switchTab('calendar')">Calendar</button>
-    <button class="sidebar-btn"        id="btn-projects"  onclick="switchTab('projects')">Assignments</button>
-    <button class="sidebar-btn"        id="btn-tasks"     onclick="switchTab('tasks')">Tasks</button>
-    <button class="sidebar-btn"        id="btn-exams"     onclick="switchTab('exams')">Exams</button>
+    <button class="sidebar-btn active" id="btn-today"       onclick="switchTab('today')">Today</button>
+    <button class="sidebar-btn"        id="btn-plan"        onclick="switchTab('plan')">Plan</button>
+    <button class="sidebar-btn"        id="btn-assignments" onclick="switchTab('assignments')"><span class="nav-full">Assignments</span><span class="nav-short">Assign</span></button>
+    <button class="sidebar-btn"        id="btn-exams"       onclick="switchTab('exams')">Exams</button>
+    <button class="sidebar-btn"        id="btn-progress"    onclick="switchTab('progress')"><span class="nav-full">Progress</span><span class="nav-short">Prog</span></button>
   </nav>
   <div class="sidebar-footer">
     <button id="install-btn" class="sidebar-btn" style="display:none" onclick="installApp()">Install app</button>
@@ -757,72 +827,33 @@ html[data-theme="dark"] .sticky-note input[type="text"] { color: #ECD9A8; }
       </div>
       <p class="key-note">Get a key at console.anthropic.com → API keys.</p>
     </div>
-    <div id="focus-section"></div>
-    <div id="recap-section"></div>
     <div class="card">
-      <div class="section-head">Tasks for today</div>
+      <div class="section-head">Today's tasks</div>
       <div id="today-tasks"></div>
     </div>
-    <div class="card">
-      <div class="section-head">Today's schedule</div>
-      <div id="today-schedule"></div>
-    </div>
-    <div class="card">
-      <div class="section-head">
-        <span>Upcoming events</span>
-        <span class="section-action">Add from Calendar →</span>
-      </div>
-      <div id="upcoming-events-list"></div>
-    </div>
-    <div class="card">
-      <div class="section-head">Upcoming deadlines</div>
+    <div class="card" id="today-deadlines-card">
+      <div class="section-head">Coming up</div>
       <div id="upcoming-deadlines"></div>
-    </div>
-    <div id="completion-log-card" class="card" style="display:none">
-      <div class="section-head">Completed</div>
-      <div id="completion-log"></div>
     </div>
   </div>
 
-  <!-- ══ CALENDAR ══ -->
-  <div id="tab-calendar" style="display:none">
-    <div class="tab-page-title">Calendar</div>
+  <!-- ══ PLAN ══ -->
+  <div id="tab-plan" style="display:none">
+    <div class="tab-page-title">Plan</div>
     <div class="card">
-      <div class="cal-nav">
-        <button class="cal-nav-btn" onclick="calNav(-1)">‹</button>
-        <div class="cal-month-label" id="cal-month-label"></div>
-        <div style="display:flex;gap:6px;align-items:center">
-          <button class="cal-today-btn" onclick="calGoToday()">Today</button>
-          <button class="cal-today-btn" style="background:var(--bg);color:var(--muted);border:1px solid var(--border)" onclick="openImportICS()" title="Import .ics file from Apple Calendar">Import</button>
-          <button class="cal-nav-btn" onclick="calNav(1)">›</button>
-        </div>
+      <div class="section-head" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+        <span>Study &amp; assignment plan</span>
+        <button class="btn-primary" id="gen-plan-btn" onclick="generateStudyPlan()">Generate plan</button>
       </div>
-      <input type="file" id="ics-file-input" accept=".ics,text/calendar" style="display:none" onchange="handleICSFile(event)">
-      <div id="ics-import-preview" style="display:none;margin:10px 0 4px;padding:12px 14px;background:var(--bg);border:1px solid var(--border);border-radius:10px"></div>
-      <div class="cal-weekdays">
-        <div class="cal-wd">M</div><div class="cal-wd">T</div><div class="cal-wd">W</div>
-        <div class="cal-wd">T</div><div class="cal-wd">F</div><div class="cal-wd">S</div><div class="cal-wd">S</div>
-      </div>
-      <div class="cal-grid" id="cal-grid"></div>
-      <div id="cal-detail"></div>
+      <div id="plan-gen-status" style="font-size:13px;color:var(--muted);margin-top:6px;min-height:18px"></div>
     </div>
-    <div class="card" style="padding:14px 20px">
-      <div class="cal-legend">
-        <span class="cal-legend-item"><span class="cal-dot dot-class"  style="width:8px;height:8px"></span>Class</span>
-        <span class="cal-legend-item"><span class="cal-dot dot-sport"  style="width:8px;height:8px"></span>Sport / Fitness</span>
-        <span class="cal-legend-item"><span class="cal-dot dot-urgent" style="width:8px;height:8px"></span>Deadline &lt;3d</span>
-        <span class="cal-legend-item"><span class="cal-dot dot-soon"   style="width:8px;height:8px"></span>Deadline &lt;7d</span>
-        <span class="cal-legend-item"><span class="cal-dot dot-ok"     style="width:8px;height:8px"></span>Deadline</span>
-        <span class="cal-legend-item"><span class="cal-dot dot-proj"   style="width:8px;height:8px"></span>Project milestone</span>
-        <span class="cal-legend-item"><span class="cal-dot dot-exam"   style="width:8px;height:8px"></span>Exam</span>
-        <span class="cal-legend-item"><span class="cal-dot dot-event"  style="width:8px;height:8px"></span>Personal event</span>
-      </div>
-    </div>
+    <div id="plan-body"></div>
   </div>
 
   <!-- ══ DEADLINES ══ -->
   <!-- ══ ASSIGNMENTS ══ -->
-  <div id="tab-projects" style="display:none">
+  <!-- ══ ASSIGNMENTS ══ -->
+  <div id="tab-assignments" style="display:none">
     <div class="tab-page-title">Assignments</div>
     <div class="card">
       <div class="section-head">Add assignment</div>
@@ -846,77 +877,88 @@ html[data-theme="dark"] .sticky-note input[type="text"] { color: #ECD9A8; }
           </select>
         </div>
       </div>
-      <div class="form-group">
-        <label>Due date</label>
-        <input type="date" id="asgn-due">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Due date</label>
+          <input type="date" id="asgn-due">
+        </div>
+        <div class="form-group">
+          <label>Weight (optional %)</label>
+          <input type="number" id="asgn-weight" placeholder="e.g. 40" min="0" max="100" style="width:100%">
+        </div>
       </div>
-      <button class="btn-primary" onclick="addAssignment()" style="width:100%">Add assignment</button>
+      <div class="form-group">
+        <label>Status</label>
+        <select id="asgn-status">
+          <option value="not-started">Not started</option>
+          <option value="in-progress">In progress</option>
+          <option value="draft">Draft</option>
+          <option value="submitted">Submitted</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Assessment criteria / rubric (optional)</label>
+        <textarea id="asgn-criteria" rows="2" placeholder="What's being assessed, marking criteria, rubric notes…"></textarea>
+      </div>
+      <div id="asgn-milestone-area" style="display:none">
+        <div class="section-head" style="margin:12px 0 8px">Suggested milestones <span style="font-size:12px;font-weight:400;color:var(--muted)">(edit before saving)</span></div>
+        <div id="asgn-milestone-loading" style="display:none"><div class="spinner" style="width:18px;height:18px;margin:8px auto"></div></div>
+        <div id="asgn-milestone-list"></div>
+      </div>
+      <button class="btn-primary" id="asgn-submit-btn" onclick="addAssignment()" style="width:100%;margin-top:12px">Add assignment</button>
     </div>
     <div class="card" id="asgn-timeline-card">
-      <div class="section-head">Timeline</div>
+      <div class="section-head">All assignments</div>
       <div id="asgn-timeline"></div>
-    </div>
-  </div>
-
-  <!-- ══ TASKS (ACADEMIC) ══ -->
-  <div id="tab-tasks" style="display:none">
-    <div class="tab-page-title">Tasks</div>
-    <div class="card">
-      <div class="section-head">
-        <span>✨ Extract deadlines from text</span>
-      </div>
-      <p style="font-size:13px;color:var(--muted);margin-bottom:12px;line-height:1.5">Paste a syllabus, course brief, email, or anything with dates. Claude will pull out the tasks for you to review.</p>
-      <textarea id="extract-input" placeholder="Paste syllabus or course brief here..." rows="5" style="margin-bottom:10px"></textarea>
-      <button class="btn-primary" onclick="runExtraction()" id="extract-btn">Extract tasks</button>
-      <div id="extract-result"></div>
-    </div>
-    <div class="card">
-      <div class="section-head">Add academic task</div>
-      <div class="form-group">
-        <label>Task name</label>
-        <input type="text" id="t-title" placeholder="e.g. IR essay — write introduction">
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label>Deadline</label>
-          <input type="date" id="t-deadline">
-        </div>
-        <div class="form-group">
-          <label>Type</label>
-          <select id="t-type">
-            <option value="essay">Essay / Paper</option>
-            <option value="problem-set">Problem set</option>
-            <option value="reading">Reading / Review</option>
-            <option value="presentation">Presentation</option>
-            <option value="other">Other</option>
-          </select>
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label>Course (optional)</label>
-          <input type="text" id="t-course" placeholder="e.g. IR, Econometrics">
-        </div>
-        <div class="form-group">
-          <label>Notes (optional)</label>
-          <input type="text" id="t-notes" placeholder="Any extra context">
-        </div>
-      </div>
-      <button class="btn-primary" onclick="addTask()" style="width:100%;margin-top:4px">Add task</button>
-    </div>
-    <div class="card">
-      <div class="section-head">All academic tasks</div>
-      <div id="task-list"></div>
     </div>
   </div>
 
   <!-- ══ EXAMS ══ -->
   <div id="tab-exams" style="display:none">
-    <div class="tab-page-title">Exam Study Plan</div>
+    <div class="tab-page-title">Exams</div>
     <div class="card">
-      <div id="ep-callout-block"></div>
-      <div id="exam-plan-body"></div>
+      <div class="section-head" style="display:flex;align-items:center;justify-content:space-between">
+        <span>Your exams</span>
+        <button class="btn-ghost btn-sm" onclick="toggleAddExamForm()">+ Add exam</button>
+      </div>
+      <div id="exam-add-form" style="display:none;margin-top:12px">
+        <div class="form-group">
+          <label>Exam title</label>
+          <input type="text" id="exam-form-title" placeholder="e.g. Econometrics Final">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Course</label>
+            <input type="text" id="exam-form-course" placeholder="e.g. Econometrics">
+          </div>
+          <div class="form-group">
+            <label>Date</label>
+            <input type="date" id="exam-form-date">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Weight (optional %)</label>
+            <input type="number" id="exam-form-weight" placeholder="e.g. 60" min="0" max="100" style="width:100%">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Topics / syllabus (optional)</label>
+          <textarea id="exam-form-topics" rows="3" placeholder="e.g. OLS, IV, difference-in-differences, panel data…"></textarea>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn-primary" onclick="saveExamForm()">Save exam</button>
+          <button class="btn-ghost" onclick="toggleAddExamForm()">Cancel</button>
+        </div>
+      </div>
+      <div id="exam-list" style="margin-top:8px"></div>
     </div>
+  </div>
+
+  <!-- ══ PROGRESS ══ -->
+  <div id="tab-progress" style="display:none">
+    <div class="tab-page-title">Progress</div>
+    <div id="progress-body"></div>
   </div>
 
 </main>
@@ -931,9 +973,13 @@ html[data-theme="dark"] .sticky-note input[type="text"] { color: #ECD9A8; }
       <input type="text" id="api-key-inline" placeholder="API key  sk-ant-..." autocomplete="off" style="flex:1;font-size:14px">
       <button class="btn-primary" style="min-width:60px;font-size:13px;padding:8px 14px" onclick="saveApiKeyInline()">Save</button>
     </div>
-    <div style="display:flex;gap:8px">
+    <div style="display:flex;gap:8px;margin-bottom:8px">
       <button class="btn-ghost" style="flex:1;font-size:13px" onclick="exportData()">Export data</button>
       <button class="btn-ghost" style="flex:1;font-size:13px" onclick="importData()">Import data</button>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <button class="btn-ghost" style="flex:1;font-size:13px" onclick="manualSync()">Sync now</button>
+      <span id="sync-status" style="font-size:11px;color:var(--muted)"></span>
     </div>
     <input type="file" id="import-file" accept=".json" style="display:none" onchange="handleImportFile(this)">
   </div>
@@ -1087,7 +1133,7 @@ const EXAMS = [
 function examForClassEvent(ev) {
   if (!ev || ev.category !== 'class') return null;
   const evTitle = String(ev.title || '').toLowerCase();
-  return EXAMS.find(x => {
+  return (S.exams||[]).find(x => {
     if (x.date !== ev.date) return false;
     const key = String(x.course || x.title || '').toLowerCase().split(/\s+/).filter(w => w.length >= 4);
     return key.some(w => evTitle.includes(w));
@@ -1099,9 +1145,10 @@ const EV_CATEGORY_LABEL = { race:'Race / Competition', travel:'Travel / Flight',
 // ─── Migration: old flTasks/flLog/flProducts → projects ──────────────────────
 function migrateProjects() {
   if (localStorage.getItem('org_projects')) return;
-  const oldFlTasks   = JSON.parse(localStorage.getItem('org_fl_tasks')    || 'null');
-  const oldFlLog     = JSON.parse(localStorage.getItem('org_fl_log')      || 'null');
-  const oldFlCount   = parseInt(localStorage.getItem('org_fl_products')   || '0');
+  let oldFlTasks = null, oldFlLog = null;
+  try { oldFlTasks = JSON.parse(localStorage.getItem('org_fl_tasks')); } catch {}
+  try { oldFlLog   = JSON.parse(localStorage.getItem('org_fl_log'));   } catch {}
+  const oldFlCount = parseInt(localStorage.getItem('org_fl_products') || '0');
 
   const projects = PROJECTS_PRESET.map(p => ({ ...p }));
   // Patch the Filthy Labs project with existing data (if user has any)
@@ -1150,6 +1197,34 @@ function reclassifyICSv3() {
 }
 reclassifyICSv3();
 
+function seedExams() {
+  if (localStorage.getItem('org_exams') !== null) return;
+  const seeded = EXAMS.map((e, i) => ({
+    id: 'exam-' + (Date.now() + i), title: e.title,
+    course: e.course, date: e.date, topics: '', weight: null,
+  }));
+  localStorage.setItem('org_exams', JSON.stringify(seeded));
+}
+seedExams();
+
+function migrateAssignmentsV2() {
+  if (localStorage.getItem('org_asgn_migrate_v2')) return;
+  try {
+    const raw = JSON.parse(localStorage.getItem('org_assignments') || '[]');
+    const updated = raw.map(a => ({
+      ...a,
+      milestones: a.milestones ?? a.steps ?? [],
+      steps: undefined,
+      status:   a.status   ?? 'not-started',
+      criteria: a.criteria ?? '',
+      weight:   a.weight   ?? null,
+    }));
+    localStorage.setItem('org_assignments', JSON.stringify(updated));
+  } catch {}
+  localStorage.setItem('org_asgn_migrate_v2', '1');
+}
+migrateAssignmentsV2();
+
 // Sanitise stored API key — clear it if it contains non-ASCII (e.g. the '…' truncation bug)
 (function() {
   const k = localStorage.getItem('org_key') || '';
@@ -1157,27 +1232,34 @@ reclassifyICSv3();
 })();
 
 // ─── State ────────────────────────────────────────────────────────────────────
+function safeParse(key, fallback = null) {
+  try { const v = localStorage.getItem(key); return v !== null ? JSON.parse(v) : fallback; }
+  catch { return fallback; }
+}
+
 const S = {
-  apiKey:         localStorage.getItem('org_key')                        || '',
-  tasks:          JSON.parse(localStorage.getItem('org_tasks')           || 'null') ?? ACADEMIC_PRESET,
-  projects:       JSON.parse(localStorage.getItem('org_projects')        || 'null') ?? PROJECTS_PRESET,
-  focus:          JSON.parse(localStorage.getItem('org_focus')           || 'null'),
-  focusDate:      localStorage.getItem('org_focusDate')                  || '',
-  focusWindow:    localStorage.getItem('org_focusWindow')                || '',
-  completedLog:   JSON.parse(localStorage.getItem('org_completed')       || '[]'),
-  completedTasks: JSON.parse(localStorage.getItem('org_completed_ids')   || '[]'),
-  sticky:         JSON.parse(localStorage.getItem('org_sticky')          || '[]'),
-  scheduleEdits:  JSON.parse(localStorage.getItem('org_schedule_edits')  || '{}'),
-  events:         JSON.parse(localStorage.getItem('org_events')          || '[]'),
-  recaps:         JSON.parse(localStorage.getItem('org_recaps')          || '[]'),
-  dismissedRecap: localStorage.getItem('org_dismissed_recap')            || '',
-  activeProject:  localStorage.getItem('org_active_project')             || 'filthy-labs',
-  theme:          localStorage.getItem('org_theme')                      || 'light',
-  examPlan:       JSON.parse(localStorage.getItem('org_exam_plan')       || '{}'),
-  assignments:    JSON.parse(localStorage.getItem('org_assignments')      || '[]'),
+  apiKey:         localStorage.getItem('org_key')         || '',
+  tasks:          safeParse('org_tasks')                  ?? ACADEMIC_PRESET,
+  projects:       safeParse('org_projects')               ?? PROJECTS_PRESET,
+  focus:          safeParse('org_focus'),
+  focusDate:      localStorage.getItem('org_focusDate')   || '',
+  focusWindow:    localStorage.getItem('org_focusWindow') || '',
+  completedLog:   safeParse('org_completed')              ?? [],
+  completedTasks: safeParse('org_completed_ids')          ?? [],
+  sticky:         safeParse('org_sticky')                 ?? [],
+  scheduleEdits:  safeParse('org_schedule_edits')         ?? {},
+  events:         safeParse('org_events')                 ?? [],
+  recaps:         safeParse('org_recaps')                 ?? [],
+  dismissedRecap: localStorage.getItem('org_dismissed_recap') || '',
+  activeProject:  localStorage.getItem('org_active_project')  || 'filthy-labs',
+  theme:          localStorage.getItem('org_theme')            || 'light',
+  examPlan:       safeParse('org_exam_plan')              ?? {},
+  assignments:    safeParse('org_assignments')            ?? [],
+  exams:          safeParse('org_exams')                  ?? [],
+  lastSynced:     localStorage.getItem('org_last_synced') || '',
 };
 
-function persist() {
+function persist(_fromSync = false) {
   localStorage.setItem('org_tasks',            JSON.stringify(S.tasks));
   localStorage.setItem('org_projects',         JSON.stringify(S.projects));
   localStorage.setItem('org_focus',            JSON.stringify(S.focus));
@@ -1192,9 +1274,143 @@ function persist() {
   localStorage.setItem('org_dismissed_recap',  S.dismissedRecap);
   localStorage.setItem('org_active_project',   S.activeProject);
   localStorage.setItem('org_theme',            S.theme);
-  localStorage.setItem('org_exam_plan', JSON.stringify(S.examPlan));
-  localStorage.setItem('org_assignments', JSON.stringify(S.assignments));
+  localStorage.setItem('org_exam_plan',        JSON.stringify(S.examPlan));
+  localStorage.setItem('org_assignments',      JSON.stringify(S.assignments));
+  localStorage.setItem('org_exams',            JSON.stringify(S.exams));
   if (S.apiKey) localStorage.setItem('org_key', S.apiKey);
+  if (!_fromSync) scheduleSyncPush();
+}
+
+// ─── Sync (Anthropic Files API) ───────────────────────────────────────────────
+const SYNC_FILES_API  = 'https://api.anthropic.com/v1/files';
+const SYNC_FILENAME   = 'daily-os-sync.json';
+let _syncPushTimer    = null;
+
+function _syncHeaders() {
+  return {
+    'x-api-key': S.apiKey,
+    'anthropic-version': '2023-06-01',
+    'anthropic-dangerous-direct-browser-access': 'true',
+  };
+}
+
+function _syncPayload() {
+  return JSON.stringify({
+    tasks:         S.tasks,
+    assignments:   S.assignments,
+    events:        S.events,
+    scheduleEdits: S.scheduleEdits,
+    sticky:        S.sticky,
+    completedLog:  S.completedLog,
+    completedTasks:S.completedTasks,
+    recaps:        S.recaps,
+    examPlan:      S.examPlan,
+    projects:      S.projects,
+    exams:         S.exams,
+    syncedAt:      new Date().toISOString(),
+  });
+}
+
+function renderSyncStatus(status, detail) {
+  const el = document.getElementById('sync-status');
+  if (!el) return;
+  if (status === 'syncing') { el.textContent = 'Syncing…';     el.style.color = 'var(--muted)'; }
+  else if (status === 'ok') { el.textContent = detail || 'Synced'; el.style.color = 'var(--accent,#2A5C45)'; }
+  else                      { el.textContent = 'Sync failed';  el.style.color = 'var(--danger,#c0392b)'; }
+}
+
+async function syncPush() {
+  if (!S.apiKey) return;
+  renderSyncStatus('syncing');
+  try {
+    const form = new FormData();
+    form.append('file', new Blob([_syncPayload()], { type: 'application/json' }), SYNC_FILENAME);
+    const res = await fetch(SYNC_FILES_API, { method: 'POST', headers: _syncHeaders(), body: form });
+    if (!res.ok) throw new Error(res.status);
+    const { id: newId } = await res.json();
+
+    const oldId = localStorage.getItem('org_sync_file_id');
+    if (oldId && oldId !== newId) {
+      fetch(`${SYNC_FILES_API}/${oldId}`, { method: 'DELETE', headers: _syncHeaders() }).catch(() => {});
+    }
+    const now = new Date().toISOString();
+    localStorage.setItem('org_sync_file_id', newId);
+    localStorage.setItem('org_last_synced', now);
+    S.lastSynced = now;
+    renderSyncStatus('ok', `Synced ${new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}`);
+  } catch (err) {
+    console.error('Sync push failed', err);
+    renderSyncStatus('error');
+  }
+}
+
+async function syncPull() {
+  if (!S.apiKey) return false;
+  try {
+    const res = await fetch(`${SYNC_FILES_API}?limit=100`, { headers: _syncHeaders() });
+    if (!res.ok) throw new Error(res.status);
+    const { data: files = [] } = await res.json();
+
+    const syncFiles = files
+      .filter(f => f.filename === SYNC_FILENAME)
+      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    if (!syncFiles.length) return false;
+
+    const latest = syncFiles[0];
+
+    // Clean up duplicates
+    syncFiles.slice(1).forEach(f => {
+      fetch(`${SYNC_FILES_API}/${f.id}`, { method: 'DELETE', headers: _syncHeaders() }).catch(() => {});
+    });
+
+    const remoteSyncedAt = new Date(latest.created_at).getTime();
+    const lastSynced     = new Date(S.lastSynced || 0).getTime();
+    if (remoteSyncedAt <= lastSynced) return false; // Nothing new
+
+    const cRes = await fetch(`${SYNC_FILES_API}/${latest.id}/content`, { headers: _syncHeaders() });
+    if (!cRes.ok) throw new Error(cRes.status);
+    const remote = await cRes.json();
+
+    if (Array.isArray(remote.tasks))         S.tasks         = remote.tasks;
+    if (Array.isArray(remote.assignments))   S.assignments   = remote.assignments;
+    if (Array.isArray(remote.events))        S.events        = remote.events;
+    if (remote.scheduleEdits && typeof remote.scheduleEdits === 'object') S.scheduleEdits = remote.scheduleEdits;
+    if (Array.isArray(remote.sticky))        S.sticky        = remote.sticky;
+    if (Array.isArray(remote.completedLog))  S.completedLog  = remote.completedLog;
+    if (Array.isArray(remote.completedTasks))S.completedTasks= remote.completedTasks;
+    if (Array.isArray(remote.recaps))        S.recaps        = remote.recaps;
+    if (remote.examPlan && typeof remote.examPlan === 'object') S.examPlan = remote.examPlan;
+    if (Array.isArray(remote.projects))      S.projects      = remote.projects;
+    if (Array.isArray(remote.exams))         S.exams         = remote.exams;
+
+    const syncedAt = remote.syncedAt || latest.created_at;
+    localStorage.setItem('org_sync_file_id', latest.id);
+    localStorage.setItem('org_last_synced', syncedAt);
+    S.lastSynced = syncedAt;
+    persist(true);
+    return true;
+  } catch (err) {
+    console.error('Sync pull failed', err);
+    return false;
+  }
+}
+
+function scheduleSyncPush() {
+  if (!S.apiKey) return;
+  clearTimeout(_syncPushTimer);
+  _syncPushTimer = setTimeout(syncPush, 8000);
+}
+
+async function manualSync() {
+  if (!S.apiKey) { alert('Enter your API key first.'); return; }
+  renderSyncStatus('syncing');
+  const changed = await syncPull();
+  if (changed) {
+    renderAllTabs();
+    renderSyncStatus('ok', 'Pulled latest');
+  } else {
+    await syncPush();
+  }
 }
 
 // ─── Theme ────────────────────────────────────────────────────────────────────
@@ -1238,7 +1454,7 @@ function slotCategory(name) {
 }
 
 // ─── Date helpers ─────────────────────────────────────────────────────────────
-function todayStr() { return new Date().toISOString().split('T')[0]; }
+function todayStr() { const n = new Date(); return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}`; }
 function daysBetween(ds) {
   if (!ds) return Infinity;
   const t = new Date(ds + 'T00:00:00');
@@ -1250,18 +1466,27 @@ function fmtLong()      { const n=new Date(); return `${DAYS[n.getDay()]}, ${n.g
 function fmtDateFull(ds){ const d=new Date(ds+'T00:00:00'); return `${DAYS[d.getDay()]}, ${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`; }
 
 // ─── Tab switching ────────────────────────────────────────────────────────────
-const ALL_TABS = ['today','calendar','projects','tasks','exams'];
+const ALL_TABS = ['today','plan','assignments','exams','progress'];
+function renderAllTabs() {
+  renderTodayTasks();
+  renderUpcomingDeadlines();
+  const active = ALL_TABS.find(t => document.getElementById('tab-'+t).style.display !== 'none');
+  if (active === 'plan')        renderPlanTab();
+  if (active === 'assignments') renderAssignments();
+  if (active === 'exams')       renderExamList();
+  if (active === 'progress')    renderProgress();
+}
+
 function switchTab(tab) {
   ALL_TABS.forEach(t => {
     document.getElementById('tab-'+t).style.display = t===tab ? '' : 'none';
     document.getElementById('btn-'+t).classList.toggle('active', t===tab);
   });
-  document.getElementById('sticky-note').style.display = tab === 'today' ? '' : 'none';
-  if (tab==='calendar')  renderCalendar();
-  if (tab==='projects')  renderProjects();
-  if (tab==='tasks')     renderTaskList();
-  if (tab==='today')     { renderUpcomingDeadlines(); renderTodayTasks(); renderUpcomingEventsList(); renderEveningRecap(); }
-  if (tab==='exams')     renderExamTab();
+  if (tab==='plan')        renderPlanTab();
+  if (tab==='assignments') renderAssignments();
+  if (tab==='today')       { renderUpcomingDeadlines(); renderTodayTasks(); }
+  if (tab==='exams')       renderExamList();
+  if (tab==='progress')    renderProgress();
 }
 
 // ─── Settings panel ───────────────────────────────────────────────────────────
@@ -1300,13 +1525,18 @@ function exportData() {
     completedTasks: S.completedTasks,
     recaps:         S.recaps,
     examPlan:       S.examPlan,
+    exams:          S.exams,
     exportedAt: new Date().toISOString(),
   };
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
+  a.href = url;
   a.download = `daily-os-${new Date().toISOString().slice(0,10)}.json`;
+  document.body.appendChild(a);
   a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
 
 function importData() {
@@ -1330,6 +1560,7 @@ function handleImportFile(input) {
       if (data.completedTasks) S.completedTasks = data.completedTasks;
       if (data.recaps)         S.recaps         = data.recaps;
       if (data.examPlan)       S.examPlan       = data.examPlan;
+      if (data.exams)          S.exams          = data.exams;
       S.focus = null; S.focusDate = '';
       persist();
       renderUpcomingDeadlines();
@@ -1352,7 +1583,9 @@ function showApiKeyCard() {
 }
 function saveApiKey() {
   const v = document.getElementById('api-key-input').value.trim();
-  if (!v.startsWith('sk-ant-')) { alert('Anthropic API keys start with sk-ant-'); return; }
+  if (!v.startsWith('sk-ant-') || ![...v].every(c => c.charCodeAt(0) <= 127)) {
+    alert('Invalid API key — paste the full key starting with sk-ant-'); return;
+  }
   S.apiKey = v;
   persist();
   document.getElementById('setup-card').style.display = 'none';
@@ -1389,7 +1622,7 @@ function currentWindow() {
 
 // ─── Exam helpers ─────────────────────────────────────────────────────────────
 function getUpcomingExams() {
-  return EXAMS.map(e => ({ ...e, days: daysBetween(e.date) })).filter(e => e.days >= 0).sort((a, b) => a.days - b.days);
+  return (S.exams||[]).map(e => ({ ...e, days: daysBetween(e.date) })).filter(e => e.days >= 0).sort((a, b) => a.days - b.days);
 }
 function getNearestExam() {
   const upcoming = getUpcomingExams();
@@ -1466,13 +1699,15 @@ function buildPrompt() {
 
   // Upcoming assignments
   const pendingAssignments = S.assignments
-    .filter(a => !a.done && a.dueDate)
+    .filter(a => a.status !== 'submitted' && a.dueDate)
     .map(a => ({ ...a, days: daysBetween(a.dueDate) }))
     .sort((a,b) => a.days - b.days);
   const assignmentsBlock = pendingAssignments.length
-    ? pendingAssignments.map(a =>
-        `  • [id:${a.id}] "${a.title}"${a.course?' ('+a.course+')':''} | ${a.type} | due ${fmtShort(a.dueDate)} (${a.days}d)`
-      ).join('\n')
+    ? pendingAssignments.map(a => {
+        const nextMs = (a.milestones || []).filter(m => !m.done && m.dueDate).sort((x,y) => x.dueDate < y.dueDate ? -1 : 1)[0];
+        const msStr  = nextMs ? ` | next milestone: "${nextMs.title}" due ${fmtShort(nextMs.dueDate)}` : '';
+        return `  • [id:${a.id}] "${a.title}"${a.course?' ('+a.course+')':''} | ${a.type} | status: ${a.status||'not-started'} | due ${fmtShort(a.dueDate)} (${a.days}d)${msStr}`;
+      }).join('\n')
     : null;
 
   const projectsSection = assignmentsBlock
@@ -1591,7 +1826,7 @@ async function generateFocus(force=false) {
     return;
   }
 
-  const examToday = EXAMS.find(e => e.date === t);
+  const examToday = (S.exams||[]).find(e => e.date === t);
   if (examToday) {
     const examFocus = {
       task: `${examToday.title} today — you've prepared for this. Go execute.`,
@@ -1778,14 +2013,14 @@ function renderUpcomingDeadlines() {
   const projTasks = S.assignments
     .filter(a => a.dueDate && !a.done)
     .map(a => ({ ...a, deadline:a.dueDate, days:daysBetween(a.dueDate), source:'assignment', projectName:a.course }));
-  const exams = EXAMS.map(e => ({ ...e, deadline:e.date, days:daysBetween(e.date), source:'exam' }));
+  const exams = (S.exams||[]).map(e => ({ ...e, deadline:e.date, days:daysBetween(e.date), source:'exam' }));
   const list = [...exams, ...academic, ...projTasks]
     .filter(t => t.days >= 0 && t.days <= 45)
     .sort((a,b) => a.days - b.days)
     .slice(0, 8);
 
   if (!list.length) {
-    el.innerHTML = `<div class="empty">No upcoming deadlines. Add tasks in the Tasks tab.</div>`;
+    el.innerHTML = `<div class="empty">No upcoming deadlines.</div>`;
     return;
   }
   el.innerHTML = list.map(t => {
@@ -1882,7 +2117,9 @@ function computeDots(ds, dow, dlMap) {
     dots.push(days <= 3 ? 'urgent' : days <= 7 ? 'soon' : 'ok');
   }
   if (proj.length) dots.push('proj');
-  if (EXAMS.some(e => e.date === ds)) dots.push('exam');
+  if ((S.exams||[]).some(e => e.date === ds)) dots.push('exam');
+  if ((S.examPlan?.[ds] || []).length) dots.push('study');
+  if (S.assignments.some(a => (a.milestones||[]).some(m => m.dueDate === ds && !m.done))) dots.push('milestone');
   if ((dlMap[ds] || []).some(t => t.isEvent)) dots.push('event');
   return [...new Set(dots)].slice(0, 5);
 }
@@ -1905,7 +2142,7 @@ function renderCalDetail() {
   const dls = [
     ...S.tasks.map(t => ({ ...t, isProject:false, isExam:false })).filter(t => t.deadline === calSelected),
     ...S.assignments.filter(a => a.dueDate === calSelected).map(a => ({ ...a, isProject:true, isExam:false, projectName:a.course })),
-    ...EXAMS.filter(e => e.date === calSelected).map(e => ({ ...e, deadline:e.date, isProject:false, isExam:true })),
+    ...(S.exams||[]).filter(e => e.date === calSelected).map(e => ({ ...e, deadline:e.date, isProject:false, isExam:true })),
   ];
 
   let html = `<div class="cal-detail">
@@ -1961,7 +2198,7 @@ function renderCalDetail() {
       return `
       <div class="cal-detail-row"${style}>
         <span style="flex:1">${esc(ev.time)} — ${esc(ev.title)}${tag}</span>
-        <button class="btn-remove" onclick="removePersonalEvent('${ev.id}')">✕</button>
+        <button class="btn-remove" onclick="removePersonalEvent('${escId(ev.id)}')">✕</button>
       </div>`;
     }).join('');
   } else {
@@ -1982,6 +2219,34 @@ function renderCalDetail() {
     html += `</div>`;
   }
 
+  // Study tasks from exam plan
+  const studyTasks = S.examPlan?.[calSelected] || [];
+  if (studyTasks.length) {
+    html += `<div class="cal-detail-section"><div class="cal-detail-label">Study tasks</div>`;
+    html += studyTasks.map(t => `
+      <div class="cal-detail-row" style="${t.done ? 'opacity:0.5;text-decoration:line-through' : ''}">
+        <span style="flex:1">${esc(t.title)}${t.course ? ` <span style="color:var(--muted)">(${esc(t.course)})</span>` : ''}${t.duration ? ` · ${esc(t.duration)}` : ''}</span>
+      </div>`).join('');
+    html += `</div>`;
+  }
+
+  // Assignment milestones due on this day
+  const milestonesOnDay = [];
+  S.assignments.forEach(a => {
+    (a.milestones || []).forEach(m => {
+      if (m.dueDate === calSelected) milestonesOnDay.push({ m, a });
+    });
+  });
+  if (milestonesOnDay.length) {
+    html += `<div class="cal-detail-section"><div class="cal-detail-label">Milestones due</div>`;
+    html += milestonesOnDay.map(({ m, a }) => `
+      <div class="cal-detail-row" style="${m.done ? 'opacity:0.5;text-decoration:line-through' : ''}">
+        <span style="flex:1">${esc(m.title)} <span style="color:var(--muted)">· ${esc(a.title)}</span></span>
+        ${m.done ? '<span class="badge b-green" style="font-size:10px">Done</span>' : '<span class="badge b-amber" style="font-size:10px">Due</span>'}
+      </div>`).join('');
+    html += `</div>`;
+  }
+
   const evOnDay = S.events.filter(ev => ev.date === calSelected && !(ev.category === 'class' && ev.time));
   if (evOnDay.length) {
     html += `<div class="cal-detail-section"><div class="cal-detail-label">Personal events</div>`;
@@ -1990,7 +2255,7 @@ function renderCalDetail() {
       return `<div class="cal-detail-row" style="color:var(--event)">
         <span style="flex:1;font-weight:500">${esc(ev.title)}</span>
         ${catBadge}
-        <button class="btn-remove" onclick="removePersonalEvent('${ev.id}')">✕</button>
+        <button class="btn-remove" onclick="removePersonalEvent('${escId(ev.id)}')">✕</button>
       </div>`;
     }).join('');
     html += `</div>`;
@@ -2054,7 +2319,7 @@ function handleICSFile(e) {
       events.forEach(ev => expandRecurrence(ev).forEach(occ => expanded.push(occ)));
       showImportPreview(expanded);
     } catch (err) {
-      renderImportBanner(`<div style="color:var(--danger,#c0392b);font-size:12px">Couldn't parse file: ${err.message}</div>`);
+      renderImportBanner(`<div style="color:var(--danger,#c0392b);font-size:12px">Couldn't parse file: ${esc(err.message)}</div>`);
     }
   };
   reader.readAsText(f);
@@ -2294,57 +2559,47 @@ function expandRecurrence(ev, horizonDays) {
 }
 
 // ─── Assignments tab ──────────────────────────────────────────────────────────
-function renderProjects() { renderAssignments(); }
+const STATUS_LABEL = { 'not-started':'Not started', 'in-progress':'In progress', draft:'Draft', submitted:'Submitted' };
+const STATUS_CLASS = { 'not-started':'b-grey', 'in-progress':'b-amber', draft:'b-blue', submitted:'b-green' };
+const TYPE_LABEL_A = { essay:'Essay', presentation:'Presentation', report:'Report', project:'Project', other:'Other' };
+
 function renderAssignments() {
   const el = document.getElementById('asgn-timeline');
   if (!el) return;
-  const TYPE_LABEL_A = {
-    essay:'Essay', presentation:'Presentation', report:'Report', project:'Project',
-    'problem-set':'Problem set', reading:'Reading', review:'Review', other:'Other',
-  };
-
-  // Merge S.tasks (academic deadlines) and S.assignments into one unified list
-  const taskItems = S.tasks.map(t => ({
-    id: t.id, title: t.title, course: t.course || '', type: t.type || 'other',
-    dueDate: t.deadline, done: !!(t.done || S.completedTasks.includes(t.id)),
-    source: 'task', steps: [],
-  }));
-  const asgnItems = S.assignments.map(a => ({ ...a, source: 'assignment' }));
-  const all = [...taskItems, ...asgnItems].sort((a, b) => {
+  const all = [...S.assignments].sort((a, b) => {
     if (!!a.done !== !!b.done) return a.done ? 1 : -1;
-    return (a.dueDate || '').localeCompare(b.dueDate || '');
+    return (a.dueDate || '9999').localeCompare(b.dueDate || '9999');
   });
-
-  if (!all.length) {
-    el.innerHTML = `<div class="empty">No assignments yet — add one above.</div>`;
-    return;
-  }
+  if (!all.length) { el.innerHTML = `<div class="empty">No assignments yet — add one above.</div>`; return; }
   el.innerHTML = `<div class="asgn-timeline">${all.map(a => {
-    const days = a.dueDate ? daysBetween(a.dueDate) : null;
+    const days    = a.dueDate ? daysBetween(a.dueDate) : null;
     const daysCol = a.done ? 'var(--muted)' : days !== null && days <= 7 ? '#DC2626' : days !== null && days <= 14 ? 'var(--event)' : 'var(--accent)';
     const daysLbl = a.done ? 'Done' : days === null ? '' : days < 0 ? 'Overdue' : days === 0 ? 'Today' : days === 1 ? 'Tomorrow' : `${days}d`;
-    const toggleFn = a.source === 'task' ? `toggleTaskInAssignments('${a.id}')` : `toggleAssignment('${a.id}')`;
-    const removeFn = a.source === 'task' ? `removeTask('${a.id}')` : `removeAssignment('${a.id}')`;
-    const stepsHtml = a.steps && a.steps.length ? `
-      <div class="asgn-steps">${a.steps.map(s => {
-        const sd = s.dueDate ? daysBetween(s.dueDate) : null;
-        const sdLbl = s.done ? '' : sd === null ? '' : sd < 0 ? ' · overdue' : sd === 0 ? ' · today' : ` · ${sd}d`;
+    const status  = a.status || 'not-started';
+    const milestones = a.milestones || [];
+    const msHtml = milestones.length ? `
+      <div class="asgn-steps">${milestones.map(m => {
+        const md = m.dueDate ? daysBetween(m.dueDate) : null;
+        const mdLbl = m.done ? '' : md === null ? '' : md < 0 ? ' · overdue' : md === 0 ? ' · today' : ` · ${md}d`;
         return `
           <div class="asgn-step">
-            <div class="asgn-step-check ${s.done?'done':''}" onclick="toggleAssignmentStep('${a.id}','${s.id}')"></div>
-            <span class="asgn-step-label ${s.done?'done':''}">${esc(s.title)}</span>
-            <span class="asgn-step-date">${s.dueDate?fmtShort(s.dueDate):''}${sdLbl}</span>
-            <button class="btn-remove" onclick="removeAssignmentStep('${a.id}','${s.id}')">✕</button>
+            <div class="asgn-step-check ${m.done?'done':''}" onclick="toggleMilestone('${escId(a.id)}','${escId(m.id)}')"></div>
+            <span class="asgn-step-label ${m.done?'done':''}">${esc(m.title)}</span>
+            <span class="asgn-step-date">${m.dueDate?fmtShort(m.dueDate):''}${mdLbl}</span>
+            <button class="btn-remove" onclick="removeMilestone('${escId(a.id)}','${escId(m.id)}')">✕</button>
           </div>`;
-      }).join('')}
-      </div>` : '';
-    // Only show "add step" for proper assignments (not task-sourced items)
-    const addStepHtml = a.source === 'assignment' ? `
+      }).join('')}</div>` : '';
+    const addMsHtml = `
       <div style="display:flex;gap:6px;padding:8px 0 4px;margin-top:4px">
-        <input type="text" id="step-title-${a.id}" placeholder="Add a step…" style="flex:1;font-size:13px" onkeydown="if(event.key==='Enter')addAssignmentStep('${a.id}')">
-        <input type="date" id="step-date-${a.id}" style="width:130px;font-size:13px">
-        <button class="btn-ghost btn-sm" onclick="addAssignmentStep('${a.id}')">Add</button>
-      </div>` : '';
+        <input type="text" id="ms-title-${escId(a.id)}" placeholder="Add a milestone…" style="flex:1;font-size:13px" onkeydown="if(event.key==='Enter')addMilestone('${escId(a.id)}')">
+        <input type="date" id="ms-date-${escId(a.id)}" style="width:130px;font-size:13px">
+        <button class="btn-ghost btn-sm" onclick="addMilestone('${escId(a.id)}')">Add</button>
+      </div>`;
+    const criteriaHtml = a.criteria ? `
+      <details style="margin-top:6px;font-size:12px;color:var(--muted)">
+        <summary style="cursor:pointer;user-select:none">Criteria</summary>
+        <div style="margin-top:4px;line-height:1.5">${esc(a.criteria)}</div>
+      </details>` : '';
     return `
       <div class="asgn-node">
         <div class="asgn-node-dot ${a.done?'done':''}"></div>
@@ -2353,46 +2608,140 @@ function renderAssignments() {
             <div class="asgn-name ${a.done?'done':''}">${esc(a.title)}</div>
             <div class="asgn-meta">
               <span class="asgn-type-chip">${TYPE_LABEL_A[a.type]||a.type}</span>
-              ${a.course?esc(a.course)+' · ':''}${a.dueDate?'Due '+fmtShort(a.dueDate):''}
+              <span class="badge ${STATUS_CLASS[status]}" style="font-size:10px;padding:1px 7px">${STATUS_LABEL[status]}</span>
+              ${a.course?esc(a.course)+' · ':''}${a.dueDate?'Due '+fmtShort(a.dueDate):''}${a.weight?' · '+a.weight+'%':''}
             </div>
+            ${criteriaHtml}
           </div>
           <div class="asgn-actions">
             ${days !== null ? `<span style="font-size:12px;font-weight:600;color:${daysCol}">${daysLbl}</span>` : ''}
-            <div class="asgn-check ${a.done?'done':''}" onclick="${toggleFn}"></div>
-            <button class="btn-remove" onclick="${removeFn}">✕</button>
+            <select style="font-size:11px;border:1px solid var(--border);border-radius:6px;padding:2px 4px;background:var(--card);color:var(--text)" onchange="updateAssignmentStatus('${escId(a.id)}',this.value)">
+              ${['not-started','in-progress','draft','submitted'].map(v => `<option value="${v}"${v===status?' selected':''}>${STATUS_LABEL[v]}</option>`).join('')}
+            </select>
+            <div class="asgn-check ${a.done?'done':''}" onclick="toggleAssignment('${escId(a.id)}')"></div>
+            <button class="btn-remove" onclick="removeAssignment('${escId(a.id)}')">✕</button>
           </div>
         </div>
-        ${stepsHtml}
-        ${addStepHtml}
+        ${msHtml}
+        ${addMsHtml}
       </div>`;
   }).join('')}</div>`;
 }
 
-function toggleTaskInAssignments(id) {
-  const t = S.tasks.find(t => t.id === id);
-  if (!t) return;
-  t.done = !t.done;
-  if (t.done && !S.completedTasks.includes(id)) S.completedTasks.push(id);
-  else if (!t.done) S.completedTasks = S.completedTasks.filter(x => x !== id);
-  S.focus = null; S.focusDate = '';
-  persist();
-  renderAssignments();
-  renderUpcomingDeadlines();
-}
+let _pendingMilestones = [];
+let _awaitingMilestoneSave = false;
+let _editingExamId = null;
 
 function addAssignment() {
-  const title = document.getElementById('asgn-title').value.trim();
-  const course = document.getElementById('asgn-course').value.trim();
-  const type  = document.getElementById('asgn-type').value;
-  const due   = document.getElementById('asgn-due').value;
+  if (_awaitingMilestoneSave) { saveAssignmentWithMilestones(); return; }
+  const title    = document.getElementById('asgn-title').value.trim();
+  const course   = document.getElementById('asgn-course').value.trim();
+  const type     = document.getElementById('asgn-type').value;
+  const due      = document.getElementById('asgn-due').value;
+  const criteria = document.getElementById('asgn-criteria').value.trim();
   if (!title) { document.getElementById('asgn-title').focus(); return; }
-  S.assignments.push({ id:'asgn-'+Date.now(), title, course, type, dueDate:due, done:false, steps:[] });
+  if (S.apiKey && due) {
+    suggestMilestones(title, type, course, due, criteria);
+  } else {
+    _pendingMilestones = [];
+    saveAssignmentWithMilestones();
+  }
+}
+
+async function suggestMilestones(title, type, course, due, criteria) {
+  const msArea    = document.getElementById('asgn-milestone-area');
+  const msLoading = document.getElementById('asgn-milestone-loading');
+  const submitBtn = document.getElementById('asgn-submit-btn');
+  msArea.style.display = '';
+  msLoading.style.display = '';
+  document.getElementById('asgn-milestone-list').innerHTML = '';
+  submitBtn.disabled = true;
+  try {
+    const prompt = `You are an academic planner. Given the following assignment, suggest 3-4 internal milestone deadlines that will help the student complete it on time. Each milestone should be a concrete, verifiable deliverable (e.g. "Complete outline", "Submit first draft").
+
+Assignment: "${title}"
+Type: ${type}
+Course: ${course || 'unspecified'}
+Due date: ${due}
+${criteria ? 'Assessment criteria: ' + criteria : ''}
+
+Respond ONLY with valid JSON (no markdown):
+{"milestones":[{"title":"...","dueDate":"YYYY-MM-DD"}]}
+All milestone dates must be before ${due}.`;
+    const res  = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type':'application/json', 'x-api-key':S.apiKey, 'anthropic-version':'2023-06-01', 'anthropic-dangerous-direct-browser-access':'true' },
+      body: JSON.stringify({ model:'claude-sonnet-4-6', max_tokens:600, messages:[{role:'user',content:prompt}] }),
+    });
+    const data = await res.json();
+    const parsed = JSON.parse(data.content?.[0]?.text?.trim() || '{}');
+    _pendingMilestones = (parsed.milestones || []).map((m, i) => ({ id:'ms-p-'+i, title:m.title, dueDate:m.dueDate||'', done:false }));
+  } catch { _pendingMilestones = []; }
+  msLoading.style.display = 'none';
+  renderPendingMilestones();
+  submitBtn.disabled = false;
+  submitBtn.textContent = 'Save assignment';
+  _awaitingMilestoneSave = true;
+}
+
+function renderPendingMilestones() {
+  const el = document.getElementById('asgn-milestone-list');
+  let html = _pendingMilestones.length
+    ? _pendingMilestones.map((m, i) => `
+        <div style="display:flex;gap:6px;align-items:center;margin-bottom:6px">
+          <input type="text" value="${esc(m.title)}" style="flex:1;font-size:13px" oninput="_pendingMilestones[${i}].title=this.value">
+          <input type="date" value="${esc(m.dueDate)}" style="width:130px;font-size:13px" onchange="_pendingMilestones[${i}].dueDate=this.value">
+          <button class="btn-remove" onclick="removePendingMilestone(${i})">✕</button>
+        </div>`).join('')
+    : `<div style="font-size:13px;color:var(--muted);padding:4px 0">No milestones suggested — add manually below.</div>`;
+  html += `
+    <div style="display:flex;gap:6px;margin-top:8px">
+      <input type="text" id="ms-new-title" placeholder="Add a milestone…" style="flex:1;font-size:13px" onkeydown="if(event.key==='Enter')addPendingMilestone()">
+      <input type="date" id="ms-new-date" style="width:130px;font-size:13px">
+      <button class="btn-ghost btn-sm" onclick="addPendingMilestone()">Add</button>
+    </div>`;
+  el.innerHTML = html;
+}
+
+function removePendingMilestone(i) { _pendingMilestones.splice(i,1); renderPendingMilestones(); }
+function addPendingMilestone() {
+  const t = document.getElementById('ms-new-title').value.trim();
+  const d = document.getElementById('ms-new-date').value;
+  if (!t) return;
+  _pendingMilestones.push({ id:'ms-p-'+Date.now(), title:t, dueDate:d, done:false });
+  renderPendingMilestones();
+}
+
+function saveAssignmentWithMilestones() {
+  const title    = document.getElementById('asgn-title').value.trim();
+  const course   = document.getElementById('asgn-course').value.trim();
+  const type     = document.getElementById('asgn-type').value;
+  const due      = document.getElementById('asgn-due').value;
+  const weight   = parseFloat(document.getElementById('asgn-weight').value) || null;
+  const criteria = document.getElementById('asgn-criteria').value.trim();
+  const status   = document.getElementById('asgn-status').value;
+  S.assignments.push({
+    id: 'asgn-'+Date.now(), title, course, type, dueDate:due,
+    done:false, status, criteria, weight,
+    milestones: _pendingMilestones.map((m,i) => ({ ...m, id:'ms-'+Date.now()+'-'+i })),
+  });
   S.focus = null; S.focusDate = '';
   persist();
-  document.getElementById('asgn-title').value = '';
-  document.getElementById('asgn-course').value = '';
+  ['asgn-title','asgn-course','asgn-criteria'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('asgn-due').value = '';
-  renderAssignments();
+  document.getElementById('asgn-weight').value = '';
+  document.getElementById('asgn-status').value = 'not-started';
+  document.getElementById('asgn-milestone-area').style.display = 'none';
+  document.getElementById('asgn-submit-btn').textContent = 'Add assignment';
+  _pendingMilestones = []; _awaitingMilestoneSave = false;
+  renderAssignments(); renderUpcomingDeadlines(); renderAssignmentSummary();
+}
+
+function updateAssignmentStatus(id, status) {
+  const a = S.assignments.find(a => a.id === id);
+  if (!a) return;
+  a.status = status;
+  persist(); renderAssignments(); renderProgress();
 }
 
 function toggleAssignment(id) {
@@ -2400,46 +2749,40 @@ function toggleAssignment(id) {
   if (!a) return;
   a.done = !a.done;
   S.focus = null; S.focusDate = '';
-  persist();
-  renderAssignments();
-  renderUpcomingDeadlines();
+  persist(); renderAssignments(); renderUpcomingDeadlines(); renderAssignmentSummary();
 }
 
 function removeAssignment(id) {
   S.assignments = S.assignments.filter(a => a.id !== id);
   S.focus = null; S.focusDate = '';
-  persist();
-  renderAssignments();
-  renderUpcomingDeadlines();
+  persist(); renderAssignments(); renderUpcomingDeadlines(); renderAssignmentSummary();
 }
 
-function addAssignmentStep(asgnId) {
+function addMilestone(asgnId) {
   const a = S.assignments.find(a => a.id === asgnId);
   if (!a) return;
-  const title = document.getElementById('step-title-'+asgnId)?.value.trim();
-  const date  = document.getElementById('step-date-'+asgnId)?.value;
+  const title = document.getElementById('ms-title-'+asgnId)?.value.trim();
+  const date  = document.getElementById('ms-date-'+asgnId)?.value;
   if (!title) return;
-  a.steps.push({ id:'step-'+Date.now(), title, dueDate:date||'', done:false });
-  persist();
-  renderAssignments();
+  if (!a.milestones) a.milestones = [];
+  a.milestones.push({ id:'ms-'+Date.now(), title, dueDate:date||'', done:false });
+  persist(); renderAssignments();
 }
 
-function toggleAssignmentStep(asgnId, stepId) {
+function toggleMilestone(asgnId, msId) {
   const a = S.assignments.find(a => a.id === asgnId);
   if (!a) return;
-  const s = a.steps.find(s => s.id === stepId);
-  if (!s) return;
-  s.done = !s.done;
-  persist();
-  renderAssignments();
+  const m = (a.milestones||[]).find(m => m.id === msId);
+  if (!m) return;
+  m.done = !m.done;
+  persist(); renderAssignments();
 }
 
-function removeAssignmentStep(asgnId, stepId) {
+function removeMilestone(asgnId, msId) {
   const a = S.assignments.find(a => a.id === asgnId);
   if (!a) return;
-  a.steps = a.steps.filter(s => s.id !== stepId);
-  persist();
-  renderAssignments();
+  a.milestones = (a.milestones||[]).filter(m => m.id !== msId);
+  persist(); renderAssignments();
 }
 
 
@@ -2477,7 +2820,7 @@ function renderUpcomingEventsList() {
         </div>
         <div class="task-right">
           <span style="font-size:12px;font-weight:600;color:${col}">${lbl}</span>
-          <button class="btn-remove" onclick="removePersonalEvent('${ev.id}')">✕</button>
+          <button class="btn-remove" onclick="removePersonalEvent('${escId(ev.id)}')">✕</button>
         </div>
       </div>`;
   }).join('');
@@ -2523,6 +2866,7 @@ function removeTask(id) {
 
 function renderTaskList() {
   const el     = document.getElementById('task-list');
+  if (!el) return;
   const sorted = [...S.tasks].sort((a,b) => a.deadline.localeCompare(b.deadline));
   const TYPE_LABEL = {essay:'Essay','problem-set':'Problem set',reading:'Reading',review:'Review',presentation:'Presentation',other:'Other'};
 
@@ -2539,7 +2883,7 @@ function renderTaskList() {
         </div>
         <div class="task-right">
           <span style="font-size:12px;font-weight:600;color:${col}">${lbl}</span>
-          <button class="btn-remove" onclick="removeTask('${t.id}')">✕</button>
+          <button class="btn-remove" onclick="removeTask('${escId(t.id)}')">✕</button>
         </div>
       </div>`;
   }).join('');
@@ -2717,7 +3061,7 @@ async function submitRecap() {
   const todayDow = new Date().getDay();
   const tomorrowDow = (todayDow + 1) % 7;
   const tomorrowDate = new Date(); tomorrowDate.setDate(tomorrowDate.getDate() + 1);
-  const tomorrowDateStr = tomorrowDate.toISOString().split('T')[0];
+  const tomorrowDateStr = `${tomorrowDate.getFullYear()}-${String(tomorrowDate.getMonth()+1).padStart(2,'0')}-${String(tomorrowDate.getDate()).padStart(2,'0')}`;
   const todaySlots = getEffectiveSlots(todayDow, today).filter(s => !s.cancelled).map(s => s.n);
   const tomorrowSlots = getEffectiveSlots(tomorrowDow, tomorrowDateStr).filter(s => !s.cancelled).map(s => s.n);
   const todaySchedStr = todaySlots.length ? todaySlots.join(', ') : 'no scheduled commitments (or all cancelled)';
@@ -2812,7 +3156,7 @@ function renderStickyNote() {
   if (!S.sticky.length) { el.innerHTML = ''; return; }
   el.innerHTML = S.sticky.map(n => `
     <div class="sticky-item">
-      <div class="sticky-cb ${n.done?'ticked':''}" onclick="toggleSticky('${n.id}')"></div>
+      <div class="sticky-cb ${n.done?'ticked':''}" onclick="toggleSticky('${escId(n.id)}')"></div>
       <span class="sticky-text ${n.done?'ticked':''}">${esc(n.text)}</span>
     </div>`).join('');
 }
@@ -2821,6 +3165,7 @@ function renderStickyNote() {
 function esc(s) {
   return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
+function escId(id) { return String(id).replace(/[^a-zA-Z0-9_\-]/g, ''); }
 
 // ─── Schedule edit modal ──────────────────────────────────────────────────────
 function openEditModal(dow, index, dateStr) {
@@ -2909,56 +3254,64 @@ document.addEventListener('keydown', e => {
 function renderTodayTasks() {
   const el    = document.getElementById('today-tasks');
   const today = todayStr();
-  const items = [];
 
-  const ps = getRecurringPS();
-  const pendingPS   = ps.filter(p => !S.completedTasks.includes(p.id) && p.type === 'problem-set');
-  const pendingRead = ps.filter(p => !S.completedTasks.includes(p.id) && p.type === 'reading');
-  const nextPS = pendingPS[0] || pendingRead[0] || ps[0];
-  if (nextPS) {
-    items.push({ id: nextPS.id, label: nextPS.name, sub: `Due ${nextPS.due}`, done: S.completedTasks.includes(nextPS.id) });
+  // Primary: today's plan tasks from AI-generated plan
+  const planTasks = S.examPlan[today] || [];
+
+  if (planTasks.length) {
+    el.innerHTML = planTasks.map(t => `
+      <div class="plan-task-row${t.done ? ' plan-task-done' : ''}" onclick="togglePlanTask('${today}','${escId(t.id)}')">
+        <div class="plan-task-check${t.done ? ' checked' : ''}"></div>
+        <div class="plan-task-body">
+          <div class="plan-task-title">${esc(t.title)}</div>
+          <div class="plan-task-meta">${t.course ? esc(t.course) + (t.duration ? ' · ' : '') : ''}${t.duration ? esc(t.duration) : ''}</div>
+        </div>
+      </div>`).join('');
+    return;
   }
 
-  S.tasks
-    .map(t => ({ ...t, days: daysBetween(t.deadline) }))
-    .filter(t => t.days >= 0 && t.days <= 1)
-    .sort((a, b) => a.days - b.days)
-    .forEach(t => {
-      const sub = t.days === 0 ? 'Due today' : 'Due tomorrow';
-      const done = !!(t.done || S.completedTasks.includes(t.id));
-      items.push({ id: t.id, label: t.title, sub: `${sub}${t.course ? ' · ' + t.course : ''}`, done });
-    });
-
-  // Assignments due today or tomorrow
+  // Fallback: no plan generated yet — show assignments due soon + upcoming exams
+  const items = [];
   S.assignments
-    .filter(a => a.dueDate)
+    .filter(a => a.dueDate && a.status !== 'submitted')
     .map(a => ({ ...a, days: daysBetween(a.dueDate) }))
-    .filter(a => a.days >= 0 && a.days <= 1)
+    .filter(a => a.days >= 0 && a.days <= 3)
     .forEach(a => {
-      const sub = a.days === 0 ? 'Due today' : 'Due tomorrow';
-      const done = !!(a.done || S.completedTasks.includes(a.id));
-      items.push({ id: a.id, label: a.title, sub: `${sub}${a.course?' · '+a.course:''}`, done });
+      const sub = a.days === 0 ? 'Due today' : a.days === 1 ? 'Due tomorrow' : `Due in ${a.days} days`;
+      items.push({ id: a.id, label: a.title, sub: `${sub}${a.course?' · '+a.course:''}`, done: !!(a.done || S.completedTasks.includes(a.id)) });
     });
 
-  const examToday = EXAMS.find(e => e.date === today);
-  if (examToday) items.push({ id: examToday.id, label: examToday.title, sub: 'Today — go execute', done: false });
+  getUpcomingExams().filter(e => e.days >= 0 && e.days <= 7).forEach(e => {
+    const sub = e.days === 0 ? 'Exam today' : `Exam in ${e.days} day${e.days===1?'':'s'}`;
+    items.push({ id: e.id, label: e.title, sub: `${sub}${e.course?' · '+e.course:''}`, done: false, isExam: true });
+  });
 
   if (!items.length) {
-    el.innerHTML = '<div class="empty">Nothing critical today.</div>';
+    el.innerHTML = '<div class="empty" style="text-align:center;padding:16px 0">Generate a plan in the Plan tab to see your daily tasks.</div>';
     return;
   }
 
   el.innerHTML = items.map(item => `
-    <div class="today-task-item ${item.done ? 'done' : ''}" onclick="toggleTodayTask('${item.id}')">
-      <div class="today-task-cb ${item.done ? 'checked' : ''}"></div>
+    <div class="today-task-item ${item.done ? 'done' : ''}" onclick="${item.isExam ? '' : `toggleTodayTask('${escId(item.id)}')`}">
+      ${item.isExam ? '<span class="badge b-red" style="margin-right:4px;font-size:11px">Exam</span>' : `<div class="today-task-cb ${item.done ? 'checked' : ''}"></div>`}
       <div>
         <div class="today-task-label">${esc(item.label)}</div>
-        <div class="today-task-sub">${esc(item.sub)}</div>
+        <div class="today-task-sub">${item.sub}</div>
       </div>
     </div>`).join('');
 }
 
-function toggleTodayTask(id) {
+function toggleTodayTask(id, asgnId) {
+  // Milestone toggle
+  if (asgnId) {
+    const asgn = S.assignments.find(a => a.id === asgnId);
+    if (asgn) {
+      const m = (asgn.milestones || []).find(m => m.id === id);
+      if (m) { m.done = !m.done; persist(); renderTodayTasks(); renderProgress(); }
+    }
+    return;
+  }
+  // Assignment / task toggle
   if (S.completedTasks.includes(id)) {
     S.completedTasks = S.completedTasks.filter(x => x !== id);
     const t = S.tasks.find(t => t.id === id);
@@ -2977,18 +3330,38 @@ function toggleTodayTask(id) {
   renderUpcomingDeadlines();
 }
 
+function renderAssignmentSummary() {
+  const el = document.getElementById('today-assignment-summary');
+  if (!el) return;
+  const assignments = S.assignments || [];
+  const counts = { 'not-started': 0, 'in-progress': 0, draft: 0, submitted: 0 };
+  assignments.forEach(a => { if (counts[a.status] !== undefined) counts[a.status]++; });
+  const total = assignments.length;
+  if (!total) {
+    el.innerHTML = '<div class="empty">No assignments added yet.</div>';
+    return;
+  }
+  const STATUS_LABEL = { 'not-started':'Not started', 'in-progress':'In progress', draft:'Draft', submitted:'Submitted' };
+  const STATUS_CLASS = { 'not-started':'b-grey', 'in-progress':'b-amber', draft:'b-blue', submitted:'b-green' };
+  el.innerHTML = `<div style="display:flex;flex-wrap:wrap;gap:8px;padding:4px 0">` +
+    Object.entries(counts).filter(([,c]) => c > 0).map(([s, c]) =>
+      `<span class="badge ${STATUS_CLASS[s]}">${c} ${STATUS_LABEL[s]}</span>`
+    ).join('') +
+  `</div>`;
+}
+
 // ─── Exam plan tab ────────────────────────────────────────────────────────────
 function renderExamTab() {
   const el    = document.getElementById('exam-plan-body');
   const cdEl  = document.getElementById('ep-countdown');
   const today = todayStr();
 
-  const lastExam = EXAMS.reduce((latest, e) => e.date > latest ? e.date : latest, '');
-  if (!lastExam) { el.innerHTML = '<div class="empty">No exams configured in EXAMS.</div>'; return; }
+  const lastExam = (S.exams||[]).reduce((latest, e) => e.date > latest ? e.date : latest, '');
+  if (!lastExam) { el.innerHTML = '<div class="empty">No exams added yet — use the form above.</div>'; return; }
 
   // Callout block listing all exams + days remaining
   const calloutEl = document.getElementById('ep-callout-block');
-  const upcoming = EXAMS.map(e => ({ ...e, days: daysBetween(e.date) })).filter(e => e.days >= 0).sort((a,b) => a.days-b.days);
+  const upcoming = (S.exams||[]).map(e => ({ ...e, days: daysBetween(e.date) })).filter(e => e.days >= 0).sort((a,b) => a.days-b.days);
   calloutEl.innerHTML = upcoming.length
     ? `<div class="ep-callout">${upcoming.map(e => `<strong>${esc(e.title)}</strong> — ${e.days === 0 ? 'today' : `in ${e.days} day${e.days===1?'':'s'}`}`).join(' &nbsp;·&nbsp; ')}</div>`
     : '';
@@ -3007,7 +3380,7 @@ function renderExamTab() {
     const isToday   = ds === today;
     const isPast    = ds < today;
     const isWeekend = dow === 0 || dow === 6;
-    const exam      = EXAMS.find(e => e.date === ds);
+    const exam      = (S.exams||[]).find(e => e.date === ds);
     const tasks     = S.examPlan[ds] || [];
     const classes   = S.events.filter(ev => ev.date === ds && ev.category === 'class' && !examForClassEvent(ev));
 
@@ -3018,11 +3391,11 @@ function renderExamTab() {
 
     const taskRows = tasks.map(t => `
       <tr class="${t.done ? 'ep-task-done' : ''}">
-        <td class="ep-td-check"><div class="ep-check ${t.done ? 'checked' : ''}" onclick="toggleExamTask('${ds}','${t.id}')"></div></td>
+        <td class="ep-td-check"><div class="ep-check ${t.done ? 'checked' : ''}" onclick="toggleExamTask('${ds}','${escId(t.id)}')"></div></td>
         <td class="ep-td-course">${t.course ? `<span class="ep-course-pill">${esc(t.course)}</span>` : ''}</td>
         <td><span class="ep-task-text">${esc(t.title)}</span></td>
         <td class="ep-td-time">${esc(t.duration || '')}</td>
-        <td><button class="btn-remove" onclick="removeExamTask('${ds}','${t.id}')">✕</button></td>
+        <td><button class="btn-remove" onclick="removeExamTask('${ds}','${escId(t.id)}')">✕</button></td>
       </tr>`).join('');
 
     const classesLine = classes.length
@@ -3099,24 +3472,389 @@ function removeExamTask(ds, taskId) {
   renderExamTab();
 }
 
+// ─── Plan tab ─────────────────────────────────────────────────────────────────
+
+function renderPlanTab() {
+  const el = document.getElementById('plan-body');
+  if (!el) return;
+  const today = todayStr();
+
+  const exams = (S.exams || []).filter(e => e.date >= today).sort((a,b) => a.date < b.date ? -1 : 1);
+  const assignments = (S.assignments || []).filter(a => a.status !== 'submitted' && a.dueDate >= today).sort((a,b) => a.dueDate < b.dueDate ? -1 : 1);
+
+  if (!exams.length && !assignments.length) {
+    el.innerHTML = '<div class="card"><div class="empty">Add exams or assignments first, then click "Generate plan".</div></div>';
+    return;
+  }
+
+  const lastDate = [...exams.map(e => e.date), ...assignments.map(a => a.dueDate)].sort().pop();
+  const days = [];
+  for (let d = new Date(today + 'T00:00:00'); ; d.setDate(d.getDate() + 1)) {
+    const n = d;
+    const ds = `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}`;
+    days.push(ds);
+    if (ds >= lastDate) break;
+  }
+
+  const hasAnyTasks = days.some(ds => (S.examPlan[ds] || []).length > 0);
+  if (!hasAnyTasks) {
+    el.innerHTML = '<div class="card"><div class="empty" style="text-align:center;padding:16px 0">No plan yet — click "Generate plan" above and Claude will build your full study schedule.</div></div>';
+    return;
+  }
+
+  el.innerHTML = days.map(ds => {
+    const date = new Date(ds + 'T00:00:00');
+    const dow = date.getDay();
+    const isToday = ds === today;
+    const isPast  = ds < today;
+    const tasks   = S.examPlan[ds] || [];
+    const exam    = exams.find(e => e.date === ds);
+    const dueAsgns = assignments.filter(a => a.dueDate === ds);
+
+    if (!tasks.length && !exam && !dueAsgns.length) return '';
+
+    const dayLabel = `${DAYS[dow]}, ${date.getDate()} ${MONTHS[date.getMonth()]}`;
+    const classes = ['card','plan-day-card'];
+    if (isPast && !isToday) classes.push('plan-day-past');
+    if (isToday) classes.push('plan-day-today');
+
+    return `<div class="${classes.join(' ')}" id="plan-day-${ds}">
+      <div class="plan-day-heading">
+        ${dayLabel}
+        ${isToday ? '<span class="ep-today-tag">Today</span>' : ''}
+        ${exam ? `<span class="ep-exam-tag">${esc(exam.title)}</span>` : ''}
+        ${dueAsgns.map(a => `<span class="badge b-red" style="font-size:11px">${esc(a.title)} due</span>`).join('')}
+      </div>
+      ${tasks.length ? tasks.map(t => `
+        <div class="plan-task-row${t.done ? ' plan-task-done' : ''}" onclick="togglePlanTask('${ds}','${escId(t.id)}')">
+          <div class="plan-task-check${t.done ? ' checked' : ''}"></div>
+          <div class="plan-task-body">
+            <div class="plan-task-title">${esc(t.title)}</div>
+            <div class="plan-task-meta">${t.course ? esc(t.course) + (t.duration ? ' · ' : '') : ''}${t.duration ? esc(t.duration) : ''}</div>
+          </div>
+        </div>`).join('')
+      : '<div class="empty" style="padding:4px 0 0;font-size:13px">No tasks — rest day.</div>'}
+    </div>`;
+  }).filter(Boolean).join('');
+
+  const todayCard = document.getElementById(`plan-day-${today}`);
+  if (todayCard) setTimeout(() => todayCard.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+}
+
+function togglePlanTask(ds, taskId) {
+  const tasks = S.examPlan[ds];
+  if (!tasks) return;
+  const t = tasks.find(t => t.id === taskId);
+  if (t) { t.done = !t.done; persist(); renderPlanTab(); renderTodayTasks(); }
+}
+
+async function generateStudyPlan() {
+  if (!S.apiKey) { alert('Set an API key in Settings first.'); return; }
+  const exams = (S.exams || []).filter(e => e.date >= todayStr()).sort((a,b) => a.date < b.date ? -1 : 1);
+  const assignments = (S.assignments || []).filter(a => a.status !== 'submitted' && a.dueDate >= todayStr()).sort((a,b) => a.dueDate < b.dueDate ? -1 : 1);
+  if (!exams.length && !assignments.length) { alert('Add some exams or assignments first.'); return; }
+
+  const btn = document.getElementById('gen-plan-btn');
+  const statusEl = document.getElementById('plan-gen-status');
+  btn.disabled = true; btn.textContent = 'Generating…';
+  statusEl.innerHTML = '<span style="display:inline-flex;align-items:center;gap:8px"><span class="spinner" style="width:14px;height:14px;display:inline-block"></span>Claude is building your study plan…</span>';
+
+  const today = todayStr();
+  const examsList = exams.map(e =>
+    `- ${e.title}${e.course ? ' (' + e.course + ')' : ''}: ${e.date} (${daysBetween(e.date)} days away)` +
+    (e.topics ? `\n  Topics: ${e.topics}` : '') +
+    (e.weight  ? `\n  Weight: ${e.weight}%` : '')
+  ).join('\n');
+
+  const assignmentsList = assignments.map(a =>
+    `- ${a.title}${a.course ? ' (' + a.course + ')' : ''}: due ${a.dueDate} (${daysBetween(a.dueDate)} days away), ${a.type || 'assignment'}` +
+    (a.weight   ? `, ${a.weight}% of grade` : '') +
+    (a.criteria ? `\n  Assessment criteria: ${a.criteria}` : '') +
+    (a.status && a.status !== 'not-started' ? `\n  Current status: ${a.status}` : '') +
+    (() => {
+      const next = (a.milestones||[]).filter(m=>!m.done&&m.dueDate).sort((x,y)=>x.dueDate<y.dueDate?-1:1)[0];
+      return next ? `\n  Next milestone: "${next.title}" due ${next.dueDate}` : '';
+    })()
+  ).join('\n');
+
+  const lastDate = [...exams.map(e=>e.date), ...assignments.map(a=>a.dueDate)].sort().pop();
+
+  const prompt = `You are an academic study planner helping a university student grind through their final exam and assignment period.
+
+Today: ${today}
+Plan period: ${today} to ${lastDate}
+
+EXAMS:
+${examsList || 'None'}
+
+ASSIGNMENTS:
+${assignmentsList || 'None'}
+
+RULES:
+- Generate 2-4 specific, actionable tasks for EACH day from ${today} to ${lastDate} inclusive
+- Tasks must be concrete (not "study econometrics" but "Work through OLS derivation proofs — past paper Section A Q1-3")
+- For exams: distribute topics across days, ramp intensity toward exam, reserve day-before for light review only
+- For assignments: break into concrete writing/research steps spread before the due date (e.g. "Draft 500-word introduction", "Find 4 sources on X and annotate", "Write literature review section")
+- Don't exceed 5h of study total per day
+- Include estimated duration per task (e.g. "2h", "1.5h")
+- Use the course name as the course field
+- Mark each task with aiGenerated: true
+- Exam days themselves: include a task like "Exam — ${exams[0]?.course || 'course'}" with duration "all day"
+
+Return ONLY valid JSON with no markdown fences:
+{
+  "plan": {
+    "YYYY-MM-DD": [
+      { "id": "unique-id", "title": "Specific task", "course": "Course name", "duration": "Xh", "aiGenerated": true }
+    ]
+  }
+}`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'x-api-key': S.apiKey,
+        'anthropic-version': '2023-06-01',
+        'content-type': 'application/json',
+        'anthropic-dangerous-direct-browser-access': 'true',
+      },
+      body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 4096, messages: [{ role: 'user', content: prompt }] }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error?.message || `API ${res.status}`);
+
+    const text = data.content[0].text.trim().replace(/^```json\s*/,'').replace(/\s*```$/,'');
+    const parsed = JSON.parse(text);
+    if (!parsed.plan) throw new Error('Unexpected response shape');
+
+    // Replace AI tasks, keep manually-added ones
+    Object.entries(parsed.plan).forEach(([ds, tasks]) => {
+      const kept = (S.examPlan[ds] || []).filter(t => !t.aiGenerated && !t.done);
+      S.examPlan[ds] = [...kept, ...tasks.map((t, i) => ({ ...t, id: t.id || `ai-${ds}-${i}`, done: false, aiGenerated: true }))];
+    });
+    // Clear stale AI tasks from days not in new plan
+    Object.keys(S.examPlan).forEach(ds => {
+      if (!parsed.plan[ds]) {
+        S.examPlan[ds] = (S.examPlan[ds] || []).filter(t => !t.aiGenerated);
+        if (!S.examPlan[ds].length) delete S.examPlan[ds];
+      }
+    });
+
+    persist();
+    renderPlanTab();
+    renderTodayTasks();
+    const total = Object.values(parsed.plan).reduce((n,t) => n+t.length, 0);
+    statusEl.textContent = `Plan generated · ${total} tasks across ${Object.keys(parsed.plan).length} days`;
+  } catch (err) {
+    statusEl.textContent = `Failed: ${err.message}`;
+  } finally {
+    btn.disabled = false; btn.textContent = 'Regenerate plan';
+  }
+}
+
+// ─── Exam CRUD ────────────────────────────────────────────────────────────────
+
+function toggleAddExamForm() {
+  const form = document.getElementById('exam-add-form');
+  const isVisible = form.style.display !== 'none';
+  if (isVisible) {
+    form.style.display = 'none';
+    _editingExamId = null;
+    ['exam-form-title','exam-form-course','exam-form-date','exam-form-weight','exam-form-topics'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = '';
+    });
+  } else {
+    form.style.display = '';
+    document.getElementById('exam-form-title').focus();
+  }
+}
+
+function saveExamForm() {
+  const title  = document.getElementById('exam-form-title').value.trim();
+  const date   = document.getElementById('exam-form-date').value;
+  const course = document.getElementById('exam-form-course').value.trim();
+  const weight = document.getElementById('exam-form-weight').value;
+  const topics = document.getElementById('exam-form-topics').value.trim();
+  if (!title) { document.getElementById('exam-form-title').focus(); return; }
+  if (!date)  { document.getElementById('exam-form-date').focus(); return; }
+  if (_editingExamId) {
+    const exam = S.exams.find(e => e.id === _editingExamId);
+    if (exam) { exam.title = title; exam.course = course; exam.date = date; exam.weight = weight ? Number(weight) : null; exam.topics = topics; }
+  } else {
+    S.exams.push({ id: 'exam-' + Date.now(), title, course, date, topics, weight: weight ? Number(weight) : null });
+  }
+  persist();
+  toggleAddExamForm();
+  renderExamList();
+  renderExamTab();
+}
+
+function editExam(id) {
+  const exam = S.exams.find(e => e.id === id);
+  if (!exam) return;
+  _editingExamId = id;
+  document.getElementById('exam-form-title').value  = exam.title  || '';
+  document.getElementById('exam-form-course').value = exam.course || '';
+  document.getElementById('exam-form-date').value   = exam.date   || '';
+  document.getElementById('exam-form-weight').value = exam.weight != null ? exam.weight : '';
+  document.getElementById('exam-form-topics').value = exam.topics || '';
+  const form = document.getElementById('exam-add-form');
+  form.style.display = '';
+  document.getElementById('exam-form-title').focus();
+}
+
+function removeExam(id) {
+  if (!confirm('Remove this exam?')) return;
+  S.exams = S.exams.filter(e => e.id !== id);
+  persist();
+  renderExamList();
+  renderExamTab();
+}
+
+function renderExamList() {
+  const el = document.getElementById('exam-list');
+  if (!el) return;
+  const today = todayStr();
+  const sorted = [...(S.exams || [])].sort((a, b) => a.date < b.date ? -1 : 1);
+  if (!sorted.length) {
+    el.innerHTML = '<div class="empty" style="padding:8px 0">No exams yet — click "+ Add exam" to get started.</div>';
+    return;
+  }
+  el.innerHTML = sorted.map(e => {
+    const days = daysBetween(e.date);
+    const past = days < 0;
+    const badgeClass = past ? 'b-grey' : days === 0 ? 'b-red' : days <= 7 ? 'b-amber' : 'b-green';
+    const badgeLabel = past ? 'Past' : days === 0 ? 'Today' : `${days}d`;
+    const topicsPreview = e.topics ? esc(e.topics.length > 80 ? e.topics.slice(0, 80) + '…' : e.topics) : '';
+    return `<div class="task-item" style="${past ? 'opacity:0.55' : ''}">
+      <div class="task-right"><span class="badge ${badgeClass}">${badgeLabel}</span>
+        <button class="btn-ghost btn-sm" onclick="editExam('${escId(e.id)}')">Edit</button>
+        <button class="btn-ghost btn-sm" onclick="removeExam('${escId(e.id)}')">✕</button>
+      </div>
+      <div class="task-title">${esc(e.title)}${e.weight != null ? ` <span class="badge b-grey">${e.weight}%</span>` : ''}</div>
+      <div class="task-meta">${e.course ? esc(e.course) + ' · ' : ''}${fmtShort(e.date)}${topicsPreview ? ' · ' + topicsPreview : ''}</div>
+    </div>`;
+  }).join('');
+}
+
+// ─── Progress Tab ─────────────────────────────────────────────────────────────
+
+function renderProgress() {
+  const el = document.getElementById('progress-body');
+  if (!el) return;
+  const today = todayStr();
+  const assignments = S.assignments || [];
+
+  // 1. Submitted this month
+  const monthStart = today.slice(0, 7) + '-01';
+  const submitted = assignments.filter(a => a.status === 'submitted' && a.dueDate >= monthStart);
+
+  // 2. Milestone hit rate
+  let hit = 0, missed = 0;
+  assignments.forEach(a => {
+    (a.milestones || []).forEach(m => {
+      if (!m.dueDate) return;
+      if (m.done) hit++;
+      else if (m.dueDate < today) missed++;
+    });
+  });
+  const total = hit + missed;
+  const hitRate = total > 0 ? Math.round((hit / total) * 100) : null;
+
+  // 3. Crunch weeks — group assignment due dates + exam dates by ISO week
+  function isoWeekKey(ds) {
+    const d = new Date(ds + 'T00:00:00');
+    const day = d.getDay() || 7;
+    d.setDate(d.getDate() + 4 - day);
+    const yr = d.getFullYear();
+    const wk = Math.ceil(((d - new Date(yr, 0, 1)) / 86400000 + 1) / 7);
+    return `${yr}-W${String(wk).padStart(2,'0')}`;
+  }
+  const weekItems = {};
+  assignments.forEach(a => {
+    if (a.dueDate && a.dueDate >= today && a.status !== 'submitted') {
+      const wk = isoWeekKey(a.dueDate);
+      if (!weekItems[wk]) weekItems[wk] = { wk, items: [], monday: '' };
+      weekItems[wk].items.push({ label: esc(a.title), date: a.dueDate, type: 'assignment' });
+    }
+  });
+  (S.exams || []).forEach(e => {
+    if (e.date >= today) {
+      const wk = isoWeekKey(e.date);
+      if (!weekItems[wk]) weekItems[wk] = { wk, items: [], monday: '' };
+      weekItems[wk].items.push({ label: esc(e.title), date: e.date, type: 'exam' });
+    }
+  });
+  const crunchWeeks = Object.values(weekItems)
+    .filter(w => w.items.length >= 2)
+    .sort((a, b) => a.wk < b.wk ? -1 : 1)
+    .slice(0, 4);
+
+  // 4. Exam countdown
+  const upcomingExams = getUpcomingExams().slice(0, 5);
+
+  el.innerHTML = `
+    <div class="card">
+      <div class="section-head">Submitted this month</div>
+      ${submitted.length
+        ? submitted.map(a => `<div class="task-item">
+            <div class="task-title">${esc(a.title)}</div>
+            <div class="task-meta">${a.course ? esc(a.course) + ' · ' : ''}due ${fmtShort(a.dueDate)}</div>
+          </div>`).join('')
+        : '<div class="empty">Nothing submitted yet this month.</div>'}
+    </div>
+    <div class="card">
+      <div class="section-head">Milestone hit rate</div>
+      ${hitRate !== null
+        ? `<div style="font-size:32px;font-weight:700;margin:8px 0">${hitRate}%</div>
+           <div class="task-meta">${hit} of ${total} milestones hit on time · ${missed} overdue</div>`
+        : '<div class="empty">No dated milestones yet.</div>'}
+    </div>
+    <div class="card">
+      <div class="section-head">Upcoming crunch weeks</div>
+      ${crunchWeeks.length
+        ? crunchWeeks.map(w => `
+          <div class="task-item">
+            <div class="task-right"><span class="badge b-amber">${w.items.length} due</span></div>
+            <div class="task-title">Week ${w.wk}</div>
+            <div class="task-meta">${w.items.map(i => i.label + (i.type==='exam'?' (exam)':'')).join(' · ')}</div>
+          </div>`).join('')
+        : '<div class="empty">No crunch weeks ahead.</div>'}
+    </div>
+    <div class="card">
+      <div class="section-head">Exam countdown</div>
+      ${upcomingExams.length
+        ? upcomingExams.map(e => {
+            const cls = e.days === 0 ? 'b-red' : e.days <= 7 ? 'b-amber' : 'b-green';
+            return `<div class="task-item">
+              <div class="task-right"><span class="badge ${cls}">${e.days === 0 ? 'Today' : e.days+'d'}</span></div>
+              <div class="task-title">${esc(e.title)}</div>
+              <div class="task-meta">${e.course ? esc(e.course) + ' · ' : ''}${fmtShort(e.date)}</div>
+            </div>`;
+          }).join('')
+        : '<div class="empty">No upcoming exams.</div>'}
+    </div>`;
+}
+
 // ─── Boot ─────────────────────────────────────────────────────────────────────
 prunePastEvents();
 applyTheme();
 document.getElementById('date-display').textContent = fmtLong();
 document.getElementById('today-page-title').textContent = (() => { const n = new Date(); return DAYS[n.getDay()]; })();
-renderSchedule();
 renderTodayTasks();
 renderUpcomingDeadlines();
-renderCompletionLog();
-renderStickyNote();
-renderUpcomingEventsList();
-renderEveningRecap();
-document.getElementById('sticky-note').style.display = '';
 
 if (!S.apiKey) {
   document.getElementById('setup-card').style.display = '';
 } else {
-  generateFocus();
+  syncPull().then(changed => {
+    if (changed) {
+      renderAllTabs();
+      renderSyncStatus('ok', `Synced ${new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}`);
+    }
+  });
 }
 
 // ─── PWA ────────────────────────────────────────────────────────────────────
