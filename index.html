@@ -843,7 +843,13 @@ html[data-theme="dark"] .sticky-note input[type="text"] { color: #ECD9A8; }
     <div class="card">
       <div class="section-head" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
         <span>Study &amp; assignment plan</span>
-        <button class="btn-primary" id="gen-plan-btn" onclick="generateStudyPlan()">Generate plan</button>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <div style="display:flex;align-items:center;gap:6px">
+            <label style="font-size:12px;font-weight:500;color:var(--muted);white-space:nowrap">Start date</label>
+            <input type="date" id="plan-start-date" style="font-size:13px;padding:5px 8px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);font-family:inherit">
+          </div>
+          <button class="btn-primary" id="gen-plan-btn" onclick="generateStudyPlan()">Generate plan</button>
+        </div>
       </div>
       <div id="plan-gen-status" style="font-size:13px;color:var(--muted);margin-top:6px;min-height:18px"></div>
     </div>
@@ -1471,7 +1477,11 @@ function renderAllTabs() {
   renderTodayTasks();
   renderUpcomingDeadlines();
   const active = ALL_TABS.find(t => document.getElementById('tab-'+t).style.display !== 'none');
-  if (active === 'plan')        renderPlanTab();
+  if (active === 'plan') {
+    const dp = document.getElementById('plan-start-date');
+    if (dp && !dp.value) dp.value = todayStr();
+    renderPlanTab();
+  }
   if (active === 'assignments') renderAssignments();
   if (active === 'exams')       renderExamList();
   if (active === 'progress')    renderProgress();
@@ -1482,7 +1492,11 @@ function switchTab(tab) {
     document.getElementById('tab-'+t).style.display = t===tab ? '' : 'none';
     document.getElementById('btn-'+t).classList.toggle('active', t===tab);
   });
-  if (tab==='plan')        renderPlanTab();
+  if (tab==='plan') {
+    const dp = document.getElementById('plan-start-date');
+    if (dp && !dp.value) dp.value = todayStr();
+    renderPlanTab();
+  }
   if (tab==='assignments') renderAssignments();
   if (tab==='today')       { renderUpcomingDeadlines(); renderTodayTasks(); }
   if (tab==='exams')       renderExamList();
@@ -3550,8 +3564,12 @@ function togglePlanTask(ds, taskId) {
 
 async function generateStudyPlan() {
   if (!S.apiKey) { alert('Set an API key in Settings first.'); return; }
-  const exams = (S.exams || []).filter(e => e.date >= todayStr()).sort((a,b) => a.date < b.date ? -1 : 1);
-  const assignments = (S.assignments || []).filter(a => a.status !== 'submitted' && a.dueDate >= todayStr()).sort((a,b) => a.dueDate < b.dueDate ? -1 : 1);
+
+  const startInput = document.getElementById('plan-start-date');
+  const startDate = (startInput && startInput.value) ? startInput.value : todayStr();
+
+  const exams = (S.exams || []).filter(e => e.date >= startDate).sort((a,b) => a.date < b.date ? -1 : 1);
+  const assignments = (S.assignments || []).filter(a => a.status !== 'submitted' && a.dueDate >= startDate).sort((a,b) => a.dueDate < b.dueDate ? -1 : 1);
   if (!exams.length && !assignments.length) { alert('Add some exams or assignments first.'); return; }
 
   const btn = document.getElementById('gen-plan-btn');
@@ -3559,7 +3577,7 @@ async function generateStudyPlan() {
   btn.disabled = true; btn.textContent = 'Generating…';
   statusEl.innerHTML = '<span style="display:inline-flex;align-items:center;gap:8px"><span class="spinner" style="width:14px;height:14px;display:inline-block"></span>Claude is building your study plan…</span>';
 
-  const today = todayStr();
+  const today = startDate;
   const examsList = exams.map(e =>
     `- ${e.title}${e.course ? ' (' + e.course + ')' : ''}: ${e.date} (${daysBetween(e.date)} days away)` +
     (e.topics ? `\n  Topics: ${e.topics}` : '') +
