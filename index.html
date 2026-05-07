@@ -432,6 +432,24 @@ button { font-family: inherit; cursor: pointer; border: none; transition: all 0.
 .asgn-step-label { flex: 1; min-width: 0; }
 .asgn-step-label.done { text-decoration: line-through; color: var(--muted); }
 .asgn-step-date { font-size: 11px; color: var(--muted); flex-shrink: 0; }
+.asgn-step-order {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+.asgn-step-order-btn {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1;
+}
+.asgn-step-order-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+.asgn-step-order-btn:disabled { opacity: 0.35; cursor: default; }
 
 .phase-card {
   border-radius: var(--radius);
@@ -1075,6 +1093,7 @@ html[data-theme="dark"] .sticky-note input[type="text"] { color: #ECD9A8; }
 const DAYS        = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 const MONTHS      = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const MONTHS_FULL = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const CLAUDE_MODEL = 'claude-sonnet-4-5';
 
 const COLOUR_OPTIONS = ['green', 'purple', 'teal', 'clay', 'blue'];
 const COLOUR_LABEL   = { green:'Green', purple:'Purple', teal:'Teal', clay:'Clay', blue:'Blue' };
@@ -1987,7 +2006,7 @@ async function generateFocus(force=false) {
         'anthropic-dangerous-direct-browser-access':'true',
       },
       body: JSON.stringify({
-        model:'claude-sonnet-4-6',
+        model: CLAUDE_MODEL,
         max_tokens:500,
         messages:[{role:'user', content:buildPrompt()}],
       }),
@@ -2690,9 +2709,9 @@ function renderAssignments() {
     const daysCol = a.done ? 'var(--muted)' : days !== null && days <= 7 ? '#DC2626' : days !== null && days <= 14 ? 'var(--event)' : 'var(--accent)';
     const daysLbl = a.done ? 'Done' : days === null ? '' : days < 0 ? 'Overdue' : days === 0 ? 'Today' : days === 1 ? 'Tomorrow' : `${days}d`;
     const status  = a.status || 'not-started';
-    const milestones = (a.milestones || []).slice().sort((x,y) => (x.dueDate||'9999').localeCompare(y.dueDate||'9999'));
+    const milestones = a.milestones || [];
     const msHtml = milestones.length ? `
-      <div class="asgn-steps">${milestones.map(m => {
+      <div class="asgn-steps">${milestones.map((m, i) => {
         const md = m.dueDate ? daysBetween(m.dueDate) : null;
         const mdLbl = m.done ? '' : md === null ? '' : md < 0 ? ' · overdue' : md === 0 ? ' · today' : ` · ${md}d`;
         return `
@@ -2700,6 +2719,10 @@ function renderAssignments() {
             <div class="asgn-step-check ${m.done?'done':''}" onclick="toggleMilestone('${escId(a.id)}','${escId(m.id)}')"></div>
             <span class="asgn-step-label ${m.done?'done':''}">${esc(m.title)}</span>
             <span class="asgn-step-date">${m.dueDate?fmtShort(m.dueDate):''}${mdLbl}</span>
+            <div class="asgn-step-order">
+              <button class="asgn-step-order-btn" title="Move milestone up" onclick="event.stopPropagation(); moveMilestone('${escId(a.id)}','${escId(m.id)}',-1)"${i === 0 ? ' disabled' : ''}>↑</button>
+              <button class="asgn-step-order-btn" title="Move milestone down" onclick="event.stopPropagation(); moveMilestone('${escId(a.id)}','${escId(m.id)}',1)"${i === milestones.length - 1 ? ' disabled' : ''}>↓</button>
+            </div>
             <button class="btn-remove" onclick="removeMilestone('${escId(a.id)}','${escId(m.id)}')">✕</button>
           </div>`;
       }).join('')}</div>` : '';
@@ -2792,7 +2815,7 @@ All milestone dates must be strictly between today (${todayStr()}) and the due d
     const res  = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: { 'Content-Type':'application/json', 'x-api-key':S.apiKey, 'anthropic-version':'2023-06-01', 'anthropic-dangerous-direct-browser-access':'true' },
-      body: JSON.stringify({ model:'claude-sonnet-4-6', max_tokens:600, messages:[{role:'user',content:prompt}] }),
+      body: JSON.stringify({ model: CLAUDE_MODEL, max_tokens:600, messages:[{role:'user',content:prompt}] }),
     });
     const data = await res.json();
     const parsed = JSON.parse(data.content?.[0]?.text?.trim() || '{}');
@@ -2922,7 +2945,6 @@ function addMilestone(asgnId) {
   if (!title) return;
   if (!a.milestones) a.milestones = [];
   a.milestones.push({ id:'ms-'+Date.now(), title, dueDate:date||'', done:false });
-  a.milestones.sort((x,y) => (x.dueDate||'9999').localeCompare(y.dueDate||'9999'));
   persist(); renderAssignments();
 }
 
@@ -2940,6 +2962,18 @@ function removeMilestone(asgnId, msId) {
   if (!a) return;
   a.milestones = (a.milestones||[]).filter(m => m.id !== msId);
   persist(); renderAssignments();
+}
+
+function moveMilestone(asgnId, msId, direction) {
+  const a = S.assignments.find(a => a.id === asgnId);
+  if (!a || !Array.isArray(a.milestones)) return;
+  const from = a.milestones.findIndex(m => m.id === msId);
+  const to = from + direction;
+  if (from < 0 || to < 0 || to >= a.milestones.length) return;
+  const [item] = a.milestones.splice(from, 1);
+  a.milestones.splice(to, 0, item);
+  persist();
+  renderAssignments();
 }
 
 
@@ -3090,7 +3124,7 @@ Respond with ONLY valid JSON (no markdown fences). If no tasks found, return an 
         'anthropic-dangerous-direct-browser-access':'true',
       },
       body: JSON.stringify({
-        model:'claude-sonnet-4-6',
+        model: CLAUDE_MODEL,
         max_tokens:2000,
         messages:[{role:'user', content:prompt}],
       }),
@@ -3258,7 +3292,7 @@ Keep it warm but unsentimental. No bullets, no headers.`;
         'anthropic-dangerous-direct-browser-access':'true',
       },
       body: JSON.stringify({
-        model:'claude-sonnet-4-6',
+        model: CLAUDE_MODEL,
         max_tokens:400,
         messages:[{role:'user', content:prompt}],
       }),
@@ -3705,6 +3739,73 @@ function togglePlanTask(ds, taskId) {
   if (t) { t.done = !t.done; persist(); renderPlanTab(); renderTodayTasks(); }
 }
 
+function extractFirstJSONObject(text) {
+  const start = text.indexOf('{');
+  if (start < 0) return '';
+  let depth = 0, inStr = false, escaped = false;
+  for (let i = start; i < text.length; i++) {
+    const c = text[i];
+    if (escaped) {
+      escaped = false;
+    } else if (c === '\\' && inStr) {
+      escaped = true;
+    } else if (c === '"') {
+      inStr = !inStr;
+    } else if (!inStr) {
+      if (c === '{') depth++;
+      if (c === '}') {
+        depth--;
+        if (depth === 0) return text.slice(start, i + 1);
+      }
+    }
+  }
+  return '';
+}
+
+function parseClaudePlanResponse(text) {
+  const cleaned = String(text || '')
+    .trim()
+    .replace(/^```(?:json)?\s*/i, '')
+    .replace(/\s*```$/i, '')
+    .trim();
+  const jsonText = cleaned.startsWith('{') ? cleaned : extractFirstJSONObject(cleaned);
+  if (jsonText) {
+    try { return JSON.parse(jsonText); } catch {}
+  }
+
+  // Response may be truncated. Recover every complete "YYYY-MM-DD": [...] pair
+  // with bracket-counting so titles containing ] do not confuse the parser.
+  const days = {};
+  const dateRe = /"(\d{4}-\d{2}-\d{2})"\s*:\s*\[/g;
+  let m;
+  while ((m = dateRe.exec(cleaned)) !== null) {
+    const start = m.index + m[0].length - 1;
+    let depth = 0, i = start, inStr = false, escaped = false;
+    while (i < cleaned.length) {
+      const c = cleaned[i];
+      if (escaped) {
+        escaped = false;
+      } else if (c === '\\' && inStr) {
+        escaped = true;
+      } else if (c === '"') {
+        inStr = !inStr;
+      } else if (!inStr) {
+        if (c === '[') depth++;
+        if (c === ']') {
+          depth--;
+          if (depth === 0) {
+            try { days[m[1]] = JSON.parse(cleaned.slice(start, i + 1)); } catch {}
+            break;
+          }
+        }
+      }
+      i++;
+    }
+  }
+  if (Object.keys(days).length) return { plan: days };
+  throw new Error('Could not parse the plan response — try again.');
+}
+
 async function generateStudyPlan() {
   if (!S.apiKey) { alert('Set an API key in Settings first.'); return; }
 
@@ -3782,39 +3883,13 @@ Return ONLY valid JSON with no markdown fences:
         'content-type': 'application/json',
         'anthropic-dangerous-direct-browser-access': 'true',
       },
-      body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 8192, messages: [{ role: 'user', content: prompt }] }),
+      body: JSON.stringify({ model: CLAUDE_MODEL, max_tokens: 8192, messages: [{ role: 'user', content: prompt }] }),
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error?.message || `API ${res.status}`);
 
-    let text = (data.content[0].text || '').trim().replace(/^```json\s*/,'').replace(/\s*```$/,'');
-    let parsed;
-    try {
-      parsed = JSON.parse(text);
-    } catch {
-      // Response was truncated — extract each complete "YYYY-MM-DD": [...] pair
-      // using bracket-counting so titles containing ], don't fool us
-      const days = {};
-      const dateRe = /"(\d{4}-\d{2}-\d{2})"\s*:\s*\[/g;
-      let m;
-      while ((m = dateRe.exec(text)) !== null) {
-        const start = m.index + m[0].length - 1; // index of '['
-        let depth = 0, i = start, inStr = false, esc = false;
-        while (i < text.length) {
-          const c = text[i];
-          if (esc)           { esc = false; }
-          else if (c === '\\' && inStr) { esc = true; }
-          else if (c === '"') { inStr = !inStr; }
-          else if (!inStr) {
-            if      (c === '[') depth++;
-            else if (c === ']') { depth--; if (depth === 0) { try { days[m[1]] = JSON.parse(text.slice(start, i+1)); } catch {} break; } }
-          }
-          i++;
-        }
-      }
-      if (!Object.keys(days).length) throw new Error('Response too short to recover — try again');
-      parsed = { plan: days };
-    }
+    const text = data.content?.find(c => c.type === 'text')?.text || data.content?.[0]?.text || '';
+    const parsed = parseClaudePlanResponse(text);
     if (!parsed.plan) throw new Error('Unexpected response shape');
 
     // Replace AI tasks, keep manually-added ones
