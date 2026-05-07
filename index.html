@@ -906,6 +906,16 @@ html[data-theme="dark"] .sticky-note input[type="text"] { color: #ECD9A8; }
         <label>Assessment criteria / rubric (optional)</label>
         <textarea id="asgn-criteria" rows="2" placeholder="What's being assessed, marking criteria, rubric notes…"></textarea>
       </div>
+      <div class="form-group" style="flex-direction:row;align-items:center;gap:10px;padding:2px 0">
+        <label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-weight:500;font-size:14px">
+          <input type="checkbox" id="asgn-group" onchange="document.getElementById('asgn-contribution-row').style.display=this.checked?'':'none'">
+          Group work
+        </label>
+      </div>
+      <div class="form-group" id="asgn-contribution-row" style="display:none">
+        <label>Your contribution</label>
+        <input type="text" id="asgn-contribution" placeholder="e.g. Introduction + conclusion only, Sections 2–4">
+      </div>
       <div id="asgn-milestone-area" style="display:none">
         <div class="section-head" style="margin:12px 0 8px">Suggested milestones <span style="font-size:12px;font-weight:400;color:var(--muted)">(edit before saving)</span></div>
         <div id="asgn-milestone-loading" style="display:none"><div class="spinner" style="width:18px;height:18px;margin:8px auto"></div></div>
@@ -2625,6 +2635,7 @@ function renderAssignments() {
               <span class="badge ${STATUS_CLASS[status]}" style="font-size:10px;padding:1px 7px">${STATUS_LABEL[status]}</span>
               ${a.course?esc(a.course)+' · ':''}${a.dueDate?'Due '+fmtShort(a.dueDate):''}${a.weight?' · '+a.weight+'%':''}
             </div>
+            ${a.groupWork ? `<div style="font-size:12px;color:var(--muted);margin-top:2px">Group work${a.contribution ? ' · Your part: ' + esc(a.contribution) : ''}</div>` : ''}
             ${criteriaHtml}
           </div>
           <div class="asgn-actions">
@@ -2632,6 +2643,7 @@ function renderAssignments() {
             <select style="font-size:11px;border:1px solid var(--border);border-radius:6px;padding:2px 4px;background:var(--card);color:var(--text)" onchange="updateAssignmentStatus('${escId(a.id)}',this.value)">
               ${['not-started','in-progress','draft','submitted'].map(v => `<option value="${v}"${v===status?' selected':''}>${STATUS_LABEL[v]}</option>`).join('')}
             </select>
+            <button class="btn-ghost btn-sm" onclick="editAssignment('${escId(a.id)}')">Edit</button>
             <div class="asgn-check ${a.done?'done':''}" onclick="toggleAssignment('${escId(a.id)}')"></div>
             <button class="btn-remove" onclick="removeAssignment('${escId(a.id)}')">✕</button>
           </div>
@@ -2645,6 +2657,7 @@ function renderAssignments() {
 let _pendingMilestones = [];
 let _awaitingMilestoneSave = false;
 let _editingExamId = null;
+let _editingAsgnId = null;
 
 function addAssignment() {
   if (_awaitingMilestoneSave) { saveAssignmentWithMilestones(); return; }
@@ -2653,16 +2666,19 @@ function addAssignment() {
   const type     = document.getElementById('asgn-type').value;
   const due      = document.getElementById('asgn-due').value;
   const criteria = document.getElementById('asgn-criteria').value.trim();
+  const contribution = document.getElementById('asgn-contribution').value.trim();
   if (!title) { document.getElementById('asgn-title').focus(); return; }
+  // When editing, skip milestone suggestion and save directly
+  if (_editingAsgnId) { _pendingMilestones = null; saveAssignmentWithMilestones(); return; }
   if (S.apiKey && due) {
-    suggestMilestones(title, type, course, due, criteria);
+    suggestMilestones(title, type, course, due, criteria, contribution);
   } else {
     _pendingMilestones = [];
     saveAssignmentWithMilestones();
   }
 }
 
-async function suggestMilestones(title, type, course, due, criteria) {
+async function suggestMilestones(title, type, course, due, criteria, contribution) {
   const msArea    = document.getElementById('asgn-milestone-area');
   const msLoading = document.getElementById('asgn-milestone-loading');
   const submitBtn = document.getElementById('asgn-submit-btn');
@@ -2677,6 +2693,7 @@ Assignment: "${title}"
 Type: ${type}
 Course: ${course || 'unspecified'}
 Due date: ${due}
+${contribution ? 'This is group work. Only suggest milestones for the student\'s contribution: ' + contribution : ''}
 ${criteria ? 'Assessment criteria: ' + criteria : ''}
 
 Today's date is ${todayStr()}. Respond ONLY with valid JSON (no markdown):
@@ -2730,28 +2747,59 @@ function addPendingMilestone() {
 }
 
 function saveAssignmentWithMilestones() {
-  const title    = document.getElementById('asgn-title').value.trim();
-  const course   = document.getElementById('asgn-course').value.trim();
-  const type     = document.getElementById('asgn-type').value;
-  const due      = document.getElementById('asgn-due').value;
-  const weight   = parseFloat(document.getElementById('asgn-weight').value) || null;
-  const criteria = document.getElementById('asgn-criteria').value.trim();
-  const status   = document.getElementById('asgn-status').value;
-  S.assignments.push({
-    id: 'asgn-'+Date.now(), title, course, type, dueDate:due,
-    done:false, status, criteria, weight,
-    milestones: _pendingMilestones.map((m,i) => ({ ...m, id:'ms-'+Date.now()+'-'+i })),
-  });
+  const title        = document.getElementById('asgn-title').value.trim();
+  const course       = document.getElementById('asgn-course').value.trim();
+  const type         = document.getElementById('asgn-type').value;
+  const due          = document.getElementById('asgn-due').value;
+  const weight       = parseFloat(document.getElementById('asgn-weight').value) || null;
+  const criteria     = document.getElementById('asgn-criteria').value.trim();
+  const status       = document.getElementById('asgn-status').value;
+  const groupWork    = document.getElementById('asgn-group').checked;
+  const contribution = document.getElementById('asgn-contribution').value.trim();
+
+  if (_editingAsgnId) {
+    const a = S.assignments.find(a => a.id === _editingAsgnId);
+    if (a) Object.assign(a, { title, course, type, dueDate:due, weight, criteria, status, groupWork, contribution });
+  } else {
+    S.assignments.push({
+      id: 'asgn-'+Date.now(), title, course, type, dueDate:due,
+      done:false, status, criteria, weight, groupWork, contribution,
+      milestones: (_pendingMilestones||[]).map((m,i) => ({ ...m, id:'ms-'+Date.now()+'-'+i })),
+    });
+  }
+
   S.focus = null; S.focusDate = '';
   persist();
-  ['asgn-title','asgn-course','asgn-criteria'].forEach(id => document.getElementById(id).value = '');
+  ['asgn-title','asgn-course','asgn-criteria','asgn-contribution'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('asgn-due').value = '';
   document.getElementById('asgn-weight').value = '';
   document.getElementById('asgn-status').value = 'not-started';
+  document.getElementById('asgn-group').checked = false;
+  document.getElementById('asgn-contribution-row').style.display = 'none';
   document.getElementById('asgn-milestone-area').style.display = 'none';
   document.getElementById('asgn-submit-btn').textContent = 'Add assignment';
-  _pendingMilestones = []; _awaitingMilestoneSave = false;
+  _pendingMilestones = []; _awaitingMilestoneSave = false; _editingAsgnId = null;
   renderAssignments(); renderUpcomingDeadlines(); renderAssignmentSummary();
+}
+
+function editAssignment(id) {
+  const a = S.assignments.find(a => a.id === id);
+  if (!a) return;
+  _editingAsgnId = id;
+  document.getElementById('asgn-title').value       = a.title || '';
+  document.getElementById('asgn-course').value      = a.course || '';
+  document.getElementById('asgn-type').value        = a.type || 'essay';
+  document.getElementById('asgn-due').value         = a.dueDate || '';
+  document.getElementById('asgn-weight').value      = a.weight != null ? a.weight : '';
+  document.getElementById('asgn-criteria').value    = a.criteria || '';
+  document.getElementById('asgn-status').value      = a.status || 'not-started';
+  document.getElementById('asgn-group').checked     = !!a.groupWork;
+  document.getElementById('asgn-contribution').value = a.contribution || '';
+  document.getElementById('asgn-contribution-row').style.display = a.groupWork ? '' : 'none';
+  document.getElementById('asgn-milestone-area').style.display = 'none';
+  document.getElementById('asgn-submit-btn').textContent = 'Save changes';
+  document.getElementById('asgn-title').scrollIntoView({ behavior:'smooth', block:'center' });
+  document.getElementById('asgn-title').focus();
 }
 
 function updateAssignmentStatus(id, status) {
@@ -3589,8 +3637,9 @@ async function generateStudyPlan() {
 
   const assignmentsList = assignments.map(a =>
     `- ${a.title}${a.course ? ' (' + a.course + ')' : ''}: due ${a.dueDate} (${daysBetween(a.dueDate)} days away), ${a.type || 'assignment'}` +
-    (a.weight   ? `, ${a.weight}% of grade` : '') +
-    (a.criteria ? `\n  Assessment criteria: ${a.criteria}` : '') +
+    (a.weight        ? `, ${a.weight}% of grade` : '') +
+    (a.groupWork     ? `\n  GROUP WORK — only plan for the student's contribution${a.contribution ? ': ' + a.contribution : ''}` : '') +
+    (a.criteria      ? `\n  Assessment criteria: ${a.criteria}` : '') +
     (a.status && a.status !== 'not-started' ? `\n  Current status: ${a.status}` : '') +
     (() => {
       const next = (a.milestones||[]).filter(m=>!m.done&&m.dueDate).sort((x,y)=>x.dueDate<y.dueDate?-1:1)[0];
