@@ -1247,12 +1247,34 @@ function seedAssignments() {
   if (!existing.length) {
     const now = Date.now();
     const seeded = [
-      { id:'asgn-seed-1', title:'Draft Paper',   course:'Econometrics',         type:'report',       dueDate:'2026-05-15', done:false, status:'not-started', criteria:'', weight:null, groupWork:false, contribution:'', milestones:[] },
-      { id:'asgn-seed-2', title:'Peer Review',   course:'Econometrics',         type:'other',        dueDate:'2026-05-19', done:false, status:'not-started', criteria:'', weight:null, groupWork:false, contribution:'', milestones:[] },
-      { id:'asgn-seed-3', title:'Final Paper',   course:'Econometrics',         type:'report',       dueDate:'2026-05-31', done:false, status:'not-started', criteria:'', weight:null, groupWork:false, contribution:'', milestones:[] },
-      { id:'asgn-seed-4', title:'Final Paper',   course:'Economics of Conflict', type:'essay',       dueDate:'2026-05-17', done:false, status:'not-started', criteria:'', weight:null, groupWork:false, contribution:'', milestones:[] },
-      { id:'asgn-seed-5', title:'Presentation',  course:'International Relations', type:'presentation', dueDate:'2026-05-15', done:false, status:'not-started', criteria:'', weight:null, groupWork:false, contribution:'', milestones:[] },
-      { id:'asgn-seed-6', title:'Final Paper',   course:'International Relations', type:'essay',     dueDate:'2026-05-24', done:false, status:'not-started', criteria:'', weight:null, groupWork:false, contribution:'', milestones:[] },
+      { id:'asgn-seed-1', title:'Draft Paper', course:'Econometrics', type:'report', dueDate:'2026-05-15', done:false, status:'not-started', criteria:'', weight:null, groupWork:false, contribution:'', milestones:[
+        { id:'ms-s1-1', title:'Gather data + literature review', dueDate:'2026-05-09', done:false },
+        { id:'ms-s1-2', title:'Complete first draft',            dueDate:'2026-05-12', done:false },
+        { id:'ms-s1-3', title:'Revise + proofread',              dueDate:'2026-05-14', done:false },
+      ]},
+      { id:'asgn-seed-2', title:'Peer Review', course:'Econometrics', type:'other', dueDate:'2026-05-19', done:false, status:'not-started', criteria:'', weight:null, groupWork:false, contribution:'', milestones:[
+        { id:'ms-s2-1', title:'Read assigned paper + take notes', dueDate:'2026-05-16', done:false },
+        { id:'ms-s2-2', title:'Write review draft',               dueDate:'2026-05-18', done:false },
+      ]},
+      { id:'asgn-seed-3', title:'Final Paper', course:'Econometrics', type:'report', dueDate:'2026-05-31', done:false, status:'not-started', criteria:'', weight:null, groupWork:false, contribution:'', milestones:[
+        { id:'ms-s3-1', title:'Incorporate peer review feedback', dueDate:'2026-05-22', done:false },
+        { id:'ms-s3-2', title:'Complete revised draft',           dueDate:'2026-05-27', done:false },
+        { id:'ms-s3-3', title:'Final proofread + formatting',     dueDate:'2026-05-30', done:false },
+      ]},
+      { id:'asgn-seed-4', title:'Final Paper', course:'Economics of Conflict', type:'essay', dueDate:'2026-05-17', done:false, status:'not-started', criteria:'', weight:null, groupWork:false, contribution:'', milestones:[
+        { id:'ms-s4-1', title:'Research + outline',  dueDate:'2026-05-09', done:false },
+        { id:'ms-s4-2', title:'Complete first draft', dueDate:'2026-05-13', done:false },
+        { id:'ms-s4-3', title:'Revise + finalise',    dueDate:'2026-05-16', done:false },
+      ]},
+      { id:'asgn-seed-5', title:'Presentation', course:'International Relations', type:'presentation', dueDate:'2026-05-15', done:false, status:'not-started', criteria:'', weight:null, groupWork:false, contribution:'', milestones:[
+        { id:'ms-s5-1', title:'Prepare slides + structure', dueDate:'2026-05-11', done:false },
+        { id:'ms-s5-2', title:'Practice run-through',       dueDate:'2026-05-14', done:false },
+      ]},
+      { id:'asgn-seed-6', title:'Final Paper', course:'International Relations', type:'essay', dueDate:'2026-05-24', done:false, status:'not-started', criteria:'', weight:null, groupWork:false, contribution:'', milestones:[
+        { id:'ms-s6-1', title:'Research + thesis outline', dueDate:'2026-05-12', done:false },
+        { id:'ms-s6-2', title:'Complete first draft',      dueDate:'2026-05-18', done:false },
+        { id:'ms-s6-3', title:'Revisions + final polish',  dueDate:'2026-05-23', done:false },
+      ]},
     ];
     localStorage.setItem('org_assignments', JSON.stringify(seeded));
   }
