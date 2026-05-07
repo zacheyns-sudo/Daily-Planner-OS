@@ -1,4 +1,4 @@
-const CACHE = 'daily-os-v30';
+const CACHE = 'daily-os-v31';
 
 // Files to pre-cache on install
 // self.location resolves relative paths correctly regardless of GitHub Pages subpath
