@@ -1241,6 +1241,25 @@ function migrateAssignmentsV2() {
 }
 migrateAssignmentsV2();
 
+function seedAssignments() {
+  if (localStorage.getItem('org_asgn_seeded_v1')) return;
+  const existing = JSON.parse(localStorage.getItem('org_assignments') || '[]');
+  if (!existing.length) {
+    const now = Date.now();
+    const seeded = [
+      { id:'asgn-seed-1', title:'Draft Paper',   course:'Econometrics',         type:'report',       dueDate:'2026-05-15', done:false, status:'not-started', criteria:'', weight:null, groupWork:false, contribution:'', milestones:[] },
+      { id:'asgn-seed-2', title:'Peer Review',   course:'Econometrics',         type:'other',        dueDate:'2026-05-19', done:false, status:'not-started', criteria:'', weight:null, groupWork:false, contribution:'', milestones:[] },
+      { id:'asgn-seed-3', title:'Final Paper',   course:'Econometrics',         type:'report',       dueDate:'2026-05-31', done:false, status:'not-started', criteria:'', weight:null, groupWork:false, contribution:'', milestones:[] },
+      { id:'asgn-seed-4', title:'Final Paper',   course:'Economics of Conflict', type:'essay',       dueDate:'2026-05-17', done:false, status:'not-started', criteria:'', weight:null, groupWork:false, contribution:'', milestones:[] },
+      { id:'asgn-seed-5', title:'Presentation',  course:'International Relations', type:'presentation', dueDate:'2026-05-15', done:false, status:'not-started', criteria:'', weight:null, groupWork:false, contribution:'', milestones:[] },
+      { id:'asgn-seed-6', title:'Final Paper',   course:'International Relations', type:'essay',     dueDate:'2026-05-24', done:false, status:'not-started', criteria:'', weight:null, groupWork:false, contribution:'', milestones:[] },
+    ];
+    localStorage.setItem('org_assignments', JSON.stringify(seeded));
+  }
+  localStorage.setItem('org_asgn_seeded_v1', '1');
+}
+seedAssignments();
+
 // Sanitise stored API key — clear it if it contains non-ASCII (e.g. the '…' truncation bug)
 (function() {
   const k = localStorage.getItem('org_key') || '';
