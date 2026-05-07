@@ -2690,7 +2690,7 @@ function renderAssignments() {
     const daysCol = a.done ? 'var(--muted)' : days !== null && days <= 7 ? '#DC2626' : days !== null && days <= 14 ? 'var(--event)' : 'var(--accent)';
     const daysLbl = a.done ? 'Done' : days === null ? '' : days < 0 ? 'Overdue' : days === 0 ? 'Today' : days === 1 ? 'Tomorrow' : `${days}d`;
     const status  = a.status || 'not-started';
-    const milestones = a.milestones || [];
+    const milestones = (a.milestones || []).slice().sort((x,y) => (x.dueDate||'9999').localeCompare(y.dueDate||'9999'));
     const msHtml = milestones.length ? `
       <div class="asgn-steps">${milestones.map(m => {
         const md = m.dueDate ? daysBetween(m.dueDate) : null;
@@ -2799,7 +2799,8 @@ All milestone dates must be strictly between today (${todayStr()}) and the due d
     const minDate = todayStr();
     _pendingMilestones = (parsed.milestones || [])
       .filter(m => !m.dueDate || m.dueDate >= minDate)
-      .map((m, i) => ({ id:'ms-p-'+i, title:m.title, dueDate:m.dueDate||'', done:false }));
+      .map((m, i) => ({ id:'ms-p-'+i, title:m.title, dueDate:m.dueDate||'', done:false }))
+      .sort((x,y) => (x.dueDate||'9999').localeCompare(y.dueDate||'9999'));
   } catch { _pendingMilestones = []; }
   msLoading.style.display = 'none';
   renderPendingMilestones();
@@ -2921,6 +2922,7 @@ function addMilestone(asgnId) {
   if (!title) return;
   if (!a.milestones) a.milestones = [];
   a.milestones.push({ id:'ms-'+Date.now(), title, dueDate:date||'', done:false });
+  a.milestones.sort((x,y) => (x.dueDate||'9999').localeCompare(y.dueDate||'9999'));
   persist(); renderAssignments();
 }
 
