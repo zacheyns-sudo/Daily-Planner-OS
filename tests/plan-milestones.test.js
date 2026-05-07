@@ -49,6 +49,10 @@ function runInContext(names, extra = '') {
         ],
       }],
     },
+    EXAM_SYLLABUS_TOPICS: {
+      econometrics: 'The simple linear regression model',
+      'economics of conflict': 'Greed versus Grievance',
+    },
     persist() {},
     renderAssignments() {},
   };
@@ -72,6 +76,22 @@ runInContext(['extractFirstJSONObject', 'parseClaudePlanResponse'], `
 
   const recovered = parseClaudePlanResponse('{"plan":{"2026-05-07":[{"title":"A ] bracket","course":"IR"}],"2026-05-08":[{"title":"B"}]');
   assert.strictEqual(recovered.plan['2026-05-07'][0].title, 'A ] bracket');
+`);
+
+runInContext(['normaliseCourseName', 'applyExamSyllabusBackfill'], `
+  const exams = [
+    { title: 'Econometrics exam', course: 'Econometrics', topics: '' },
+    { title: 'Economics of Conflict final', course: '', topics: '' },
+    { title: 'Other exam', course: 'Other', topics: 'Keep this' },
+  ];
+  const result = applyExamSyllabusBackfill(exams);
+  assert.strictEqual(result.changed, true);
+  assert.ok(result.exams[0].topics.includes('simple linear regression'));
+  assert.ok(result.exams[1].topics.includes('Greed versus Grievance'));
+  assert.strictEqual(result.exams[2].topics, 'Keep this');
+
+  const second = applyExamSyllabusBackfill(result.exams);
+  assert.strictEqual(second.changed, false);
 `);
 
 console.log('plan-milestones tests passed');

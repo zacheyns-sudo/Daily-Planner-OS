@@ -1162,6 +1162,48 @@ const EXAMS = [
   { title: 'Economics of Conflict exam', date: '2026-05-28', course: 'Economics of Conflict' },
 ];
 
+const EXAM_SYLLABUS_TOPICS = {
+  econometrics: [
+    'Week 1: The simple linear regression model. Chapters: Chapter 2 (not 2.10), Chapter 4, prior knowledge Chapter 1 and Chapter 3. Practice: Problems week 1. Paper work: team registration.',
+    'Week 2: The multiple regression model. Chapters: Chapter 5 and Chapter 6 (not 5.7.2-5.7.3 and 6.1.5). Practice: Problems week 2. Paper work: research proposal.',
+    'Week 3: Indicator variables and heteroscedasticity. Chapters: Chapter 7 and Chapter 8 (not 7.5-7.6). Practice: Problems week 3. Paper work: meet with supervisor.',
+    'Week 4: Time series analysis: stationary variables. Chapter: Chapter 9 (not 9.5.3-9.5.4). Practice: Problems week 4. Paper work: introduction plus theoretical framework.',
+    'Week 5: Time series analysis: non-stationary variables. Chapter: Chapter 12. Practice: Problems week 5. Paper work: meet with supervisor.',
+    'Week 6: Models for binary dependent variables. Chapters: Chapter 16.1 and 16.2 (not 16.2.8-16.2.11). Practice: Problems week 6.',
+    'Week 7: Recap and final consolidation across regression, time series, heteroscedasticity, indicator variables, and binary dependent variable models.',
+    'Week 8: Exam.',
+  ].join('\n'),
+  'economics of conflict': [
+    'Lecture 1: Introduction to Economics of Conflict. Readings: Murshed, M.S. (2009), Chapter 1: Introduction; Murshed, M.S. (2009), Chapter 2: Growth and Conflict. PBL 1.',
+    'Lecture 2: Greed versus Grievance. Readings: Murshed, M.S. (2009), Chapter 3: Greed and Grievance. PBL 2.',
+    'Lecture 3: Bargaining and Commitment. Readings: Fearon, J.D. (1995), Rationalist Explanations for War; Schelling, T.C. (1966), The Diplomacy of Violence, required sections: Introduction p.1-2, Contrast of brute force with coercion p.2-6, From battlefield warfare to diplomacy of violence p.26-34. PBL 3.',
+    'Lecture 4: Instability of Peace and Social Contract. Readings: Murshed, M.S. (2009), Chapter 4: Uneasy Commitment to Peace; Murshed, M.S. (2009), Chapter 5: Social Contract and Lasting Peace. PBL 4.',
+    'PBL 5: Student presentations of group assignment.',
+    'Lecture 5: Liberal peace and Balance of power. Guest speaker: Prof Emeritus Mansooob S. Murshed. Readings: Murshed, M.S. (2009), Chapter 7: The Liberal Peace and Globalization.',
+    'Lecture 6: Identity and Class. Readings: Genicot, G. and Ray, D. (2024), Identities in conflict. PBL 6.',
+    'Lecture 7: Wrap-up. PBL 7.',
+    'Week 8: Reflection week.',
+    'Week 9: Final Exam.',
+  ].join('\n'),
+};
+
+function normaliseCourseName(s) {
+  return String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+}
+
+function applyExamSyllabusBackfill(exams) {
+  let changed = false;
+  const next = (exams || []).map(exam => {
+    if (exam.topics && String(exam.topics).trim()) return exam;
+    const haystack = normaliseCourseName(`${exam.course || ''} ${exam.title || ''}`);
+    const key = Object.keys(EXAM_SYLLABUS_TOPICS).find(k => haystack.includes(k));
+    if (!key) return exam;
+    changed = true;
+    return { ...exam, topics: EXAM_SYLLABUS_TOPICS[key] };
+  });
+  return { exams: next, changed };
+}
+
 // Match an imported class event on an exam date to the corresponding exam
 // (e.g. the recurring "Economics of Conflict" class on 2026-05-27 should
 // render as the exam, not a lecture). Returns the matching EXAM entry or null.
@@ -1236,11 +1278,22 @@ function seedExams() {
   if (localStorage.getItem('org_exams') !== null) return;
   const seeded = EXAMS.map((e, i) => ({
     id: 'exam-' + (Date.now() + i), title: e.title,
-    course: e.course, date: e.date, topics: '', weight: null,
+    course: e.course, date: e.date, topics: EXAM_SYLLABUS_TOPICS[normaliseCourseName(e.course)] || '', weight: null,
   }));
   localStorage.setItem('org_exams', JSON.stringify(seeded));
 }
 seedExams();
+
+function patchExamSyllabusTopicsV1() {
+  if (localStorage.getItem('org_exam_syllabus_topics_v1')) return;
+  try {
+    const raw = JSON.parse(localStorage.getItem('org_exams') || '[]');
+    const result = applyExamSyllabusBackfill(raw);
+    if (result.changed) localStorage.setItem('org_exams', JSON.stringify(result.exams));
+  } catch {}
+  localStorage.setItem('org_exam_syllabus_topics_v1', '1');
+}
+patchExamSyllabusTopicsV1();
 
 function migrateAssignmentsV2() {
   if (localStorage.getItem('org_asgn_migrate_v2')) return;
