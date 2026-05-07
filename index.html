@@ -2679,9 +2679,9 @@ Course: ${course || 'unspecified'}
 Due date: ${due}
 ${criteria ? 'Assessment criteria: ' + criteria : ''}
 
-Respond ONLY with valid JSON (no markdown):
+Today's date is ${todayStr()}. Respond ONLY with valid JSON (no markdown):
 {"milestones":[{"title":"...","dueDate":"YYYY-MM-DD"}]}
-All milestone dates must be before ${due}.`;
+All milestone dates must be strictly between today (${todayStr()}) and the due date (${due}). Do NOT suggest dates in the past.`;
     const res  = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: { 'Content-Type':'application/json', 'x-api-key':S.apiKey, 'anthropic-version':'2023-06-01', 'anthropic-dangerous-direct-browser-access':'true' },
@@ -2689,7 +2689,10 @@ All milestone dates must be before ${due}.`;
     });
     const data = await res.json();
     const parsed = JSON.parse(data.content?.[0]?.text?.trim() || '{}');
-    _pendingMilestones = (parsed.milestones || []).map((m, i) => ({ id:'ms-p-'+i, title:m.title, dueDate:m.dueDate||'', done:false }));
+    const minDate = todayStr();
+    _pendingMilestones = (parsed.milestones || [])
+      .filter(m => !m.dueDate || m.dueDate >= minDate)
+      .map((m, i) => ({ id:'ms-p-'+i, title:m.title, dueDate:m.dueDate||'', done:false }));
   } catch { _pendingMilestones = []; }
   msLoading.style.display = 'none';
   renderPendingMilestones();
@@ -3611,8 +3614,9 @@ ${assignmentsList || 'None'}
 RULES:
 - Generate 2-4 specific, actionable tasks for EACH day from ${today} to ${lastDate} inclusive
 - Tasks must be concrete (not "study econometrics" but "Work through OLS derivation proofs — past paper Section A Q1-3")
-- For exams: distribute topics across days, ramp intensity toward exam, reserve day-before for light review only
-- For assignments: break into concrete writing/research steps spread before the due date (e.g. "Draft 500-word introduction", "Find 4 sources on X and annotate", "Write literature review section")
+- CRITICAL: Start substantive exam study content from DAY 1 (${today}). Do NOT leave the first week empty or light — the student has chosen this start date intentionally and needs real work every day from the beginning
+- For exams: cover all syllabus topics across the full period. "Ramping up" means going from 2h/day early on to 3-4h/day in the final week — NOT delaying the start of content. Assign specific topics to specific days spread evenly. Final 3 days before exam: past papers and targeted revision only
+- For assignments: break into concrete writing/research steps starting immediately (e.g. "Draft 500-word introduction", "Find 4 sources on X and annotate", "Write literature review section"), spread across days before the due date
 - Don't exceed 5h of study total per day
 - Include estimated duration per task (e.g. "2h", "1.5h")
 - Use the course name as the course field
