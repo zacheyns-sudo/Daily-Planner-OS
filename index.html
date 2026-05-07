@@ -3787,16 +3787,33 @@ Return ONLY valid JSON with no markdown fences:
     const data = await res.json();
     if (!res.ok) throw new Error(data.error?.message || `API ${res.status}`);
 
-    let text = data.content[0].text.trim().replace(/^```json\s*/,'').replace(/\s*```$/,'');
+    let text = (data.content[0].text || '').trim().replace(/^```json\s*/,'').replace(/\s*```$/,'');
     let parsed;
     try {
       parsed = JSON.parse(text);
     } catch {
-      // Response was truncated — find the last complete day entry and close the JSON
-      const lastComplete = text.lastIndexOf('],');
-      if (lastComplete === -1) throw new Error('Response too short to recover — try a shorter date range');
-      text = text.slice(0, lastComplete + 1) + '}}';
-      parsed = JSON.parse(text);
+      // Response was truncated — extract each complete "YYYY-MM-DD": [...] pair
+      // using bracket-counting so titles containing ], don't fool us
+      const days = {};
+      const dateRe = /"(\d{4}-\d{2}-\d{2})"\s*:\s*\[/g;
+      let m;
+      while ((m = dateRe.exec(text)) !== null) {
+        const start = m.index + m[0].length - 1; // index of '['
+        let depth = 0, i = start, inStr = false, esc = false;
+        while (i < text.length) {
+          const c = text[i];
+          if (esc)           { esc = false; }
+          else if (c === '\\' && inStr) { esc = true; }
+          else if (c === '"') { inStr = !inStr; }
+          else if (!inStr) {
+            if      (c === '[') depth++;
+            else if (c === ']') { depth--; if (depth === 0) { try { days[m[1]] = JSON.parse(text.slice(start, i+1)); } catch {} break; } }
+          }
+          i++;
+        }
+      }
+      if (!Object.keys(days).length) throw new Error('Response too short to recover — try again');
+      parsed = { plan: days };
     }
     if (!parsed.plan) throw new Error('Unexpected response shape');
 
